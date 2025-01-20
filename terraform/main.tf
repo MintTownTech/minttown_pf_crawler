@@ -189,4 +189,3 @@ resource "aws_sns_topic_policy" "default" {
 #   protocol  = "lambda"
 #   endpoint  = aws_lambda_function.updated_function.arn
 # }
-
