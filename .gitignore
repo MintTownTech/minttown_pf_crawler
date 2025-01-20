@@ -183,3 +183,6 @@ dist
 .pnp.*
 
 service-account.json
+
+# http rest client
+*.http
