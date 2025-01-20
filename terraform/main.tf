@@ -183,9 +183,10 @@ resource "aws_sns_topic_policy" "default" {
 # }
 
 # SNS Topic Subscriptions
-resource "aws_sns_topic_subscription" "updated_function" {
-  topic_arn = aws_sns_topic.notification_topic.arn
-  protocol  = "lambda"
-  endpoint  = aws_lambda_function.updated_function.arn
-}
+
+# resource "aws_sns_topic_subscription" "updated_function" {
+#   topic_arn = aws_sns_topic.notification_topic.arn
+#   protocol  = "lambda"
+#   endpoint  = aws_lambda_function.updated_function.arn
+# }
 

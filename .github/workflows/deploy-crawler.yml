@@ -12,10 +12,6 @@ on:
 jobs:
     deploy:
         runs-on: ubuntu-latest
-        strategy:
-            matrix:
-                account: [dev, sb, game, prd]
-
         steps:
             - name: Checkout code
               uses: actions/checkout@v3
