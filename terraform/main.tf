@@ -130,6 +130,7 @@ resource "aws_iam_role_policy" "crawler_function_policy" {
 #   })
 # }
 
+# Bucket Policy for Cross Account Access
 resource "aws_s3_bucket_policy" "cross_crawler_aws_account_access" {
   bucket   = aws_s3_bucket.data_bucket.id
 
