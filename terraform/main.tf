@@ -1,9 +1,9 @@
 # Provider configuration
-provider "aws" {
-  assume_role {
-    role_arn = "arn:aws:iam::${var.crawler_aws_account_id}:role/minttown-pf-oidc-terraform-cloud-role"
-  }
-}
+# provider "aws" {
+#   assume_role {
+#     role_arn = "arn:aws:iam::${var.crawler_aws_account_id}:role/minttown-pf-oidc-terraform-cloud-role"
+#   }
+# }
 
 # provider "aws" { 
 #   alias   = "sandbox_aws_account"
