@@ -1,1 +1,21 @@
-# if enable_resource_deploy -> deploy terraform resources
+name: Deploy Crawler Lambda Functions
+
+on:
+    workflow_dispatch:
+        inputs:
+            enable_resource_deploy:
+                description: 'Enable for resource deploy'
+                required: true
+                type: boolean
+                default: true
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                account: [dev, sb, game, prd]
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
