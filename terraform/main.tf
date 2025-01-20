@@ -182,8 +182,6 @@ resource "aws_sns_topic_policy" "default" {
 #   source_arn    = aws_sns_topic.notification_topic.arn
 # }
 
-# SNS Topic Subscriptions
-
 # resource "aws_sns_topic_subscription" "updated_function" {
 #   topic_arn = aws_sns_topic.notification_topic.arn
 #   protocol  = "lambda"
