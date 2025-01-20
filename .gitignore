@@ -186,3 +186,15 @@ service-account.json
 
 # http rest client
 *.http
+
+# terraform ignore file
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/*.tfvars
+terraform/crash.log
+terraform/override.tf
+terraform/override.tf.json
+terraform/terraform.rc
+terraform/terraform.tfvars
+terraform/.terraform.lock.hcl

@@ -1,44 +1,38 @@
 # Provider configuration
 provider "aws" {
-  alias = "crawler_aws_account"
   assume_role {
     role_arn = "arn:aws:iam::${var.crawler_aws_account_id}:role/minttown-pf-oidc-terraform-cloud-role"
   }
 }
 
-provider "aws" { 
-  alias = "sandbox_aws_account"
-  assume_role {
-    role_arn = "arn:aws:iam::${var.sandbox_aws_account_id}:role/minttown-pf-oidc-terraform-cloud-role"
-  }
-}
-
+# provider "aws" { 
+#   alias   = "sandbox_aws_account"
+#   assume_role {
+#     role_arn = "arn:aws:iam::${var.sandbox_aws_account_id}:role/minttown-pf-oidc-terraform-cloud-role"
+#   }
+# }
 
 resource "aws_s3_bucket" "data_bucket" {
-  provider = aws.crawler_aws_account
-  bucket   = "XXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  bucket = var.bucket_name
 }
 
-resource "aws_s3_bucket_versioning" "data_bucket_versioning" {
-  provider = aws.crawler_aws_account
-  bucket   = aws_s3_bucket.data_bucket.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
+# resource "aws_s3_bucket_versioning" "data_bucket_versioning" {
+#   bucket   = aws_s3_bucket.data_bucket.id
+#   versioning_configuration {
+#     status = "Enabled"
+#   }
+# }
 
 # SNS Topic in Account Crawler
 resource "aws_sns_topic" "notification_topic" {
-  provider = aws.crawler_aws_account
   name     = "cross-account-notification"
 }
 
 # Lambda Function A (Account Crawler)
 resource "aws_lambda_function" "crawler_function" {
-  provider      = aws.crawler_aws_account
   filename      = "crawler_function.zip"
   function_name = "lambda_crawler_function"
-  role          = aws_iam_role.lambda_a_role.arn
+  role          = aws_iam_role.crawler_function_role.arn
   handler       = "index.handler"
   runtime       = "nodejs20.x"
 
@@ -52,24 +46,22 @@ resource "aws_lambda_function" "crawler_function" {
 }
 
 # Lambda Updated (Account Sandbox)
-resource "aws_lambda_function" "updated_function" {
-  provider      = aws.sandbox_aws_account
-  filename      = "updated_function.zip"
-  function_name = "lambda_updated_function"
-  role          = aws_iam_role.lambda_b_role.arn
-  handler       = "index.handler"
-  runtime       = "nodejs20.x"
+# resource "aws_lambda_function" "updated_function" {
+#   filename      = "updated_function.zip"
+#   function_name = "lambda_updated_function"
+#   role          = aws_iam_role.updated_function_role.arn
+#   handler       = "index.handler"
+#   runtime       = "nodejs20.x"
 
-  environment {
-    variables = {
-      SOURCE_BUCKET = aws_s3_bucket.data_bucket.id
-    }
-  }
-}
+#   environment {
+#     variables = {
+#       SOURCE_BUCKET = aws_s3_bucket.data_bucket.id
+#     }
+#   }
+# }
 
-resource "aws_iam_role" "lambda_a_role" {
-  provider = aws.crawler_aws_account
-  name     = "lambda_a_role"
+resource "aws_iam_role" "crawler_function_role" {
+  name     = "crawler_function_role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -86,9 +78,8 @@ resource "aws_iam_role" "lambda_a_role" {
 }
 
 # IAM Policy for Lambda A
-resource "aws_iam_role_policy" "lambda_a_policy" {
-  provider = aws.crawler_aws_account
-  role     = aws_iam_role.lambda_a_role.id
+resource "aws_iam_role_policy" "crawler_function_policy" {
+  role     = aws_iam_role.crawler_function_role.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -121,27 +112,25 @@ resource "aws_iam_role_policy" "lambda_a_policy" {
   })
 }
 
-# IAM Roles for Lambda B and C
-resource "aws_iam_role" "lambda_b_role" {
-  provider = aws.sandbox_aws_account
-  name     = "lambda_b_role"
+# Iam Role for Updated Function
+# resource "aws_iam_role" "updated_function_role" {
+#   name     = "updated_function_role"
 
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "lambda.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
+#   assume_role_policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Action = "sts:AssumeRole"
+#         Effect = "Allow"
+#         Principal = {
+#           Service = "lambda.amazonaws.com"
+#         }
+#       }
+#     ]
+#   })
+# }
 
-resource "aws_s3_bucket_policy" "cross_crawler_aws_accountccess" {
-  provider = aws.crawler_aws_account
+resource "aws_s3_bucket_policy" "cross_crawler_aws_account_access" {
   bucket   = aws_s3_bucket.data_bucket.id
 
   policy = jsonencode({
@@ -152,8 +141,7 @@ resource "aws_s3_bucket_policy" "cross_crawler_aws_accountccess" {
         Effect = "Allow"
         Principal = {
           AWS = [
-            aws_iam_role.lambda_b_role.arn,
-            aws_iam_role.lambda_c_role.arn
+            "arn:aws:iam::${var.organization_id}:root"
           ]
         }
         Action = [
@@ -167,7 +155,6 @@ resource "aws_s3_bucket_policy" "cross_crawler_aws_accountccess" {
 
 # SNS Topic Policy
 resource "aws_sns_topic_policy" "default" {
-  provider = aws.crawler_aws_account
   arn      = aws_sns_topic.notification_topic.arn
 
   policy = jsonencode({
@@ -177,7 +164,7 @@ resource "aws_sns_topic_policy" "default" {
         Sid    = "AllowLambdaA"
         Effect = "Allow"
         Principal = {
-          AWS = aws_iam_role.lambda_a_role.arn
+          AWS = aws_iam_role.crawler_function_role.arn
         }
         Action   = "SNS:Publish"
         Resource = aws_sns_topic.notification_topic.arn
@@ -187,35 +174,18 @@ resource "aws_sns_topic_policy" "default" {
 }
 
 # Lambda permissions for SNS to invoke Lambda B and C
-resource "aws_lambda_permission" "allow_sns_b" {
-  provider      = aws.sandbox_aws_account
-  statement_id  = "AllowSNSInvoke"
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.updated_function.function_name
-  principal     = "sns.amazonaws.com"
-  source_arn    = aws_sns_topic.notification_topic.arn
-}
-
-# resource "aws_lambda_permission" "allow_sns_c" {
-#   provider      = aws.account_c
+# resource "aws_lambda_permission" "allow_sns_b" {
 #   statement_id  = "AllowSNSInvoke"
 #   action        = "lambda:InvokeFunction"
-#   function_name = aws_lambda_function.function_c.function_name
+#   function_name = aws_lambda_function.updated_function.function_name
 #   principal     = "sns.amazonaws.com"
 #   source_arn    = aws_sns_topic.notification_topic.arn
 # }
 
 # SNS Topic Subscriptions
-resource "aws_sns_topic_subscription" "lambda_b" {
-  provider  = aws.crawler_aws_account
+resource "aws_sns_topic_subscription" "updated_function" {
   topic_arn = aws_sns_topic.notification_topic.arn
   protocol  = "lambda"
   endpoint  = aws_lambda_function.updated_function.arn
 }
 
-resource "aws_sns_topic_subscription" "lambda_c" {
-  provider  = aws.crawler_aws_account
-  topic_arn = aws_sns_topic.notification_topic.arn
-  protocol  = "lambda"
-  endpoint  = aws_lambda_function.function_c.arn
-}

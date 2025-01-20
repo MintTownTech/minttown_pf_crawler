@@ -3,7 +3,7 @@ terraform {
     organization = "MintTown"
 
     workspaces {
-      name = "your-workspace-name"
+      name = "minttown_pf_crawler"
     }
   }
 }
