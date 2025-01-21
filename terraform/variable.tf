@@ -20,3 +20,8 @@ variable "crawler_aws_account_id" {
     description = "AWS Account ID for the Crawler Account"
     type        = string
 }
+
+variable "env" {
+    description = "AWS Account ID for the Sandbox Account"
+    type        = string
+}
