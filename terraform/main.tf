@@ -61,6 +61,7 @@ resource "aws_lambda_function" "crawler_function" {
 #   }
 # }
 
+# IAM Role for Lambda
 resource "aws_iam_role" "crawler_function_role" {
   name     = "crawler_function_role"
 
