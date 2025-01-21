@@ -23,6 +23,7 @@ resource "aws_s3_bucket" "data_bucket" {
 #   }
 # }
 
+
 # SNS Topic in Account Crawler
 resource "aws_sns_topic" "notification_topic" {
   name     = "cross-account-notification"
