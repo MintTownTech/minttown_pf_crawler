@@ -29,19 +29,19 @@ jobs:
             uses: actions/checkout@v3
 
           - name: Setup Terraform
-            uses: hashicorp/setup-terraform@v1
-            
+            uses: hashicorp/setup-terraform@v2
+            with:
+              cli_config_credentials_token: ${{ secrets. TF_API_KEY }}
+
           - name: Terraform Init
             working-directory: terraform/
-            env:
-              TF_API_KEY: ${{ secrets.TF_API_KEY }}
-            run: |
-              terraform init \
-                -backend-config="organization=MintTown" \
-                -backend-config="workspaces.name=minttown_pf_infra_crawler"
+            run: terraform init
+
+          - name: Terraform Validate
+            working-directory: terraform/
+            id: validate
+            run: terraform validate -no-color
 
           - name: Terraform Plan or Apply
             run: terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }}
             working-directory: terraform/
-            env:
-              TF_API_KEY: ${{ secrets.TF_API_KEY }}
