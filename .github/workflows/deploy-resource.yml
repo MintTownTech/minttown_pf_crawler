@@ -24,25 +24,23 @@ on:
 jobs:
     deploy:
         runs-on: ubuntu-latest
-        strategy:
-            matrix:
-                account: [dev, sb, game, prd]
-
         steps:
-            - name: Checkout code
-              uses: actions/checkout@v3
+          - name: Checkout code
+            uses: actions/checkout@v3
 
-            - name: Setup Terraform
-              uses: hashicorp/setup-terraform@v1
+          - name: Setup Terraform
+            uses: hashicorp/setup-terraform@v1
+            
+          - name: Terraform Init
+            env:
+              TF_API_KEY: ${{ secrets.TF_API_KEY }}
+            run: |
+              terraform init \
+                -backend-config="organization=your_organization_name" \
+                -backend-config="workspaces.name=test_workspace"
 
-            - name: Terraform Init
-              run: terraform init
-              working-directory: terraform/
-              env:
-                TF_API_KEY: ${{ secrets.TF_API_KEY }}
-
-            - name: Terraform Plan or Apply
-              run: terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }}
-              working-directory: terraform/
-              env:
-                TF_API_KEY: ${{ secrets.TF_API_KEY }}
+          - name: Terraform Plan or Apply
+            run: terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }}
+            working-directory: terraform/
+            env:
+              TF_API_KEY: ${{ secrets.TF_API_KEY }}
