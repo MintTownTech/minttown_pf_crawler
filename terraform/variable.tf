@@ -1,30 +1,35 @@
 variable "organization_id" {
     description = "Session ID for Freecash API"
     type        = string
+    default     = "o-7572cdq8uc"
 }
 variable "bucket_name" {
     description = "AWS Account ID for the Crawler Account"
     type        = string
+    default     = "minttown-pf-crawler-data-bucket-test"
 }
 
 variable "freecash_session_id" {
-    description = "AWS Account ID for the DEV Account"
+    description = "freecash_session_id"
     type        = string
 }
 
 variable "crawler_aws_account_id" {
-    description = "AWS Account ID for the Crawler Account"
+    description = "AWS Account ID for the Crawler Account [dev account]"
     type        = string
+    default     = "340258365836"
 }
 
 variable "sandbox_aws_account_id" {
     description = "AWS Account ID for the Sandbox Account"
     type        = string
+    default     = "309217545237"
 }
 
 variable "env" {
     description = "AWS Account ID for the Sandbox Account"
     type        = string
+    default     = "dev"
 }
 
 variable "tfc_aws_audience" {

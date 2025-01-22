@@ -43,5 +43,7 @@ jobs:
             run: terraform validate -no-color
 
           - name: Terraform Plan or Apply
-            run: terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }}
+            env:
+              FREECASH_SESSION_ID: ${{ secrets.FREECASH_SESSION_ID }}
+            run: terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }} -var="freecash_session_id=${{ secrets.FREECASH_SESSION_ID }}"
             working-directory: terraform/
