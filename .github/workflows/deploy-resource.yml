@@ -32,6 +32,7 @@ jobs:
             uses: hashicorp/setup-terraform@v1
             
           - name: Terraform Init
+            working-directory: terraform/
             env:
               TF_API_KEY: ${{ secrets.TF_API_KEY }}
             run: |
