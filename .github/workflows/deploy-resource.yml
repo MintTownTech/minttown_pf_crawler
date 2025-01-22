@@ -36,8 +36,8 @@ jobs:
               TF_API_KEY: ${{ secrets.TF_API_KEY }}
             run: |
               terraform init \
-                -backend-config="organization=your_organization_name" \
-                -backend-config="workspaces.name=test_workspace"
+                -backend-config="organization=MintTown" \
+                -backend-config="workspaces.name=minttown_pf_infra_crawler"
 
           - name: Terraform Plan or Apply
             run: terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }}
