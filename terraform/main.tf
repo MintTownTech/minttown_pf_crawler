@@ -1,41 +1,33 @@
-# Provider configuration
-# provider "aws" {
-#   assume_role {
-#     role_arn = "arn:aws:iam::${var.crawler_aws_account_id}:role/minttown-pf-oidc-terraform-cloud-role"
-#   }
-# }
-
-# provider "aws" { 
-#   alias   = "sandbox_aws_account"
-#   assume_role {
-#     role_arn = "arn:aws:iam::${var.sandbox_aws_account_id}:role/minttown-pf-oidc-terraform-cloud-role"
-#   }
-# }
-
 resource "aws_s3_bucket" "data_bucket" {
   bucket = var.bucket_name
 }
 
-# resource "aws_s3_bucket_versioning" "data_bucket_versioning" {
-#   bucket   = aws_s3_bucket.data_bucket.id
-#   versioning_configuration {
-#     status = "Enabled"
-#   }
-# }
-
-
 # SNS Topic in Account Crawler
 resource "aws_sns_topic" "notification_topic" {
-  name     = "cross-account-notification"
+  name     = "crawler-cross-account-notification"
+}
+
+# S3 Bucket Notification Configuration
+resource "aws_s3_bucket_notification" "s3_bucket_notification" {
+  bucket = aws_s3_bucket.data_bucket.id
+
+  topic {
+    topic_arn = aws_sns_topic.notification_topic.arn
+    events    = ["s3:ObjectCreated:*", "s3:ObjectRemoved:*"]
+  }
+
+  depends_on = [aws_sns_topic_policy.default]
 }
 
 # Lambda Function A (Account Crawler)
 resource "aws_lambda_function" "crawler_function" {
-  filename      = "crawler_function.zip"
   function_name = "lambda_crawler_function"
+  s3_bucket     = aws_s3_bucket.data_bucket.id
+  s3_key        = "lambda_function.zip"
   role          = aws_iam_role.crawler_function_role.arn
-  handler       = "index.handler"
+  handler       = "dist/lambda_handler.handler"
   runtime       = "nodejs20.x"
+  timeout       = 30  # Increase the timeout to 30 seconds
 
   environment {
     variables = {
@@ -45,21 +37,6 @@ resource "aws_lambda_function" "crawler_function" {
     }
   }
 }
-
-# Lambda Updated (Account Sandbox)
-# resource "aws_lambda_function" "updated_function" {
-#   filename      = "updated_function.zip"
-#   function_name = "lambda_updated_function"
-#   role          = aws_iam_role.updated_function_role.arn
-#   handler       = "index.handler"
-#   runtime       = "nodejs20.x"
-
-#   environment {
-#     variables = {
-#       SOURCE_BUCKET = aws_s3_bucket.data_bucket.id
-#     }
-#   }
-# }
 
 # IAM Role for Lambda Crawler
 resource "aws_iam_role" "crawler_function_role" {
@@ -114,27 +91,9 @@ resource "aws_iam_role_policy" "crawler_function_policy" {
   })
 }
 
-# Iam Role for Updated Function
-# resource "aws_iam_role" "updated_function_role" {
-#   name     = "updated_function_role"
-
-#   assume_role_policy = jsonencode({
-#     Version = "2012-10-17"
-#     Statement = [
-#       {
-#         Action = "sts:AssumeRole"
-#         Effect = "Allow"
-#         Principal = {
-#           Service = "lambda.amazonaws.com"
-#         }
-#       }
-#     ]
-#   })
-# }
-
 # Bucket Policy for Cross Account Access
 resource "aws_s3_bucket_policy" "cross_crawler_aws_account_access" {
-  bucket   = aws_s3_bucket.data_bucket.id
+  bucket = aws_s3_bucket.data_bucket.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -143,12 +102,15 @@ resource "aws_s3_bucket_policy" "cross_crawler_aws_account_access" {
         Sid    = "AllowCrossAccountAccess"
         Effect = "Allow"
         Principal = {
-          AWS = [
-            "arn:aws:iam::${var.organization_id}:root"
-          ]
+            AWS = [
+            "arn:aws:iam::${var.sandbox_aws_account_id}:root",
+            "arn:aws:iam::${var.sandbox_aws_account_id}:role/updated_function_role"
+            ]
         }
         Action = [
-          "s3:GetObject"
+            "s3:GetObject",
+            "s3:GetObjectVersion",
+            "s3:GetObjectAcl"
         ]
         Resource = ["${aws_s3_bucket.data_bucket.arn}/*"]
       }
@@ -158,35 +120,34 @@ resource "aws_s3_bucket_policy" "cross_crawler_aws_account_access" {
 
 # SNS Topic Policy
 resource "aws_sns_topic_policy" "default" {
-  arn      = aws_sns_topic.notification_topic.arn
+  arn = aws_sns_topic.notification_topic.arn
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "AllowLambdaA"
+        Sid    = "AllowS3BucketNotifications"
         Effect = "Allow"
         Principal = {
-          AWS = aws_iam_role.crawler_function_role.arn
+          Service = "s3.amazonaws.com"
         }
         Action   = "SNS:Publish"
+        Resource = aws_sns_topic.notification_topic.arn
+        Condition = {
+          ArnLike = {
+            "aws:SourceArn" = aws_s3_bucket.data_bucket.arn
+          }
+        }
+      },
+      {
+        Sid    = "AllowSubscribeFromSpecificAccount"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${var.sandbox_aws_account_id}:root"
+        }
+        Action   = "SNS:Subscribe"
         Resource = aws_sns_topic.notification_topic.arn
       }
     ]
   })
 }
-
-# Lambda permissions for SNS to invoke Lambda B and C
-# resource "aws_lambda_permission" "allow_sns_b" {
-#   statement_id  = "AllowSNSInvoke"
-#   action        = "lambda:InvokeFunction"
-#   function_name = aws_lambda_function.updated_function.function_name
-#   principal     = "sns.amazonaws.com"
-#   source_arn    = aws_sns_topic.notification_topic.arn
-# }
-
-# resource "aws_sns_topic_subscription" "updated_function" {
-#   topic_arn = aws_sns_topic.notification_topic.arn
-#   protocol  = "lambda"
-#   endpoint  = aws_lambda_function.updated_function.arn
-# }

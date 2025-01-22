@@ -1,13 +1,10 @@
 {
     "extends": "@tsconfig/node22/tsconfig.json",
-    "include": [
-        "./src/**/*"
-    ],
+    "include": ["./src/**/*"],
     "compilerOptions": {
         "outDir": "dist",
-        "lib": [
-            "DOM"
-        ],
+        "lib": ["DOM"],
         "sourceMap": true
-    }
+    },
+    "exclude": ["node_modules"]
 }

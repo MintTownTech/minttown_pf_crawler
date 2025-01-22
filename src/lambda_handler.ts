@@ -1,7 +1,8 @@
 import axios from 'axios';
-import { APIGatewayProxyHandler } from 'aws-lambda';
+import AWS from 'aws-sdk';
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 
-export const handler: APIGatewayProxyHandler = async (event) => {
+export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     const sessionId = process.env.FREECASH_SESSION_ID;
     if (!sessionId) {
         return {
@@ -133,9 +134,23 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     try {
         const response = await axios.request(options);
+        const s3 = new AWS.S3();
+        const bucketName = process.env.S3_BUCKET;
+        if (!bucketName) {
+            throw new Error('S3_BUCKET is not set');
+        }
+        const params = {
+            Bucket: bucketName,
+            Key: 'freecash/data.json',
+            Body: JSON.stringify(response.data),
+            ContentType: 'application/json',
+        };
+
+        await s3.putObject(params).promise();
+
         return {
             statusCode: 200,
-            body: JSON.stringify(response.data),
+            body: JSON.stringify({ message: 'Data written to S3 successfully' }),
         };
     } catch (error) {
         console.error(error);
