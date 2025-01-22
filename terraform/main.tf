@@ -34,6 +34,7 @@ resource "aws_lambda_function" "crawler_function" {
       SNS_TOPIC_ARN = aws_sns_topic.notification_topic.arn
       S3_BUCKET     = aws_s3_bucket.data_bucket.id
       FREECASH_SESSION_ID = var.freecash_session_id
+      COUNTRY = "US"
     }
   }
 }
