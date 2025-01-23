@@ -169,5 +169,6 @@ jobs:
                       --runtime nodejs20.x \
                       --timeout 30 \
                       --layers $LAYER_VERSION \
+                      --profile ${{ matrix.aws_account }} \
                       --environment Variables="{COUNTRY_CODE=$AWS_REGION,SNS_TOPIC_ARN=$SNS_TOPIC_ARN,S3_BUCKET=$S3_BUCKET_NAME,FREECASH_SESSION_ID=${{ secrets.FREECASH_SESSION_ID }}}"
                     fi

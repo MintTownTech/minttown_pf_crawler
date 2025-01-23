@@ -23,3 +23,10 @@ runs:
                     "game": "arn:aws:iam::340258365836:role/oidc-github-actions-dev-role",
                     "prd": "arn:aws:iam::045372454064:role/oidc-github-actions-prd-role"
                   }
+
+        - name: Configure AWS CLI Profile
+          run: |
+              aws configure set profile.${{ inputs.environment }}.region us-west-2
+              aws configure set profile.${{ inputs.environment }}.role_arn ${{ fromJSON(env.aws_credentials_role)[inputs.environment] }}
+              aws configure set profile.${{ inputs.environment }}.source_profile default
+          shell: bash
