@@ -1,168 +1,174 @@
 name: Deploy Infra
 
 on:
-  workflow_dispatch:
-    inputs:
-      function:
-        description: "Infra to deploy"
-        required: true
-        default: "crawler"
-        type: choice
-        options:
-          - "crawler"
-          - "updated-function"
+    workflow_dispatch:
+        inputs:
+            function:
+                description: 'Infra to deploy'
+                required: true
+                default: 'crawler'
+                type: choice
+                options:
+                    - 'crawler'
+                    - 'updated-function'
 
-      action:
-        description: "Infra to deploy"
-        required: true
-        default: "plan"
-        type: choice
-        options:
-          - "plan"
-          - "apply"
-          
-
+            action:
+                description: 'Infra to deploy'
+                required: true
+                default: 'plan'
+                type: choice
+                options:
+                    - 'plan'
+                    - 'apply'
 
 permissions:
-  id-token: write
-  contents: read
+    id-token: write
+    contents: read
 
 jobs:
-    deploy-base-resource:
-        runs-on: ubuntu-latest
-        steps:
-          - name: Checkout code
-            uses: actions/checkout@v3
+    # deploy-base-resource:
+    #     runs-on: ubuntu-latest
+    #     steps:
+    #       - name: Checkout code
+    #         uses: actions/checkout@v3
 
-          - name: Setup Terraform
-            uses: hashicorp/setup-terraform@v2
-            with:
-              cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+    #       - name: Setup Terraform
+    #         uses: hashicorp/setup-terraform@v2
+    #         with:
+    #           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
-          - name: Set up Cloud SDK with Auth
-            uses: ./.github/actions/setup-auth-aws
-            id: setup-aws-with-auth
+    #       - name: Set up Cloud SDK with Auth
+    #         uses: ./.github/actions/setup-auth-aws
+    #         id: setup-aws-with-auth
 
-          - name: Terraform Init
-            working-directory: terraform/
-            run: terraform init
+    #       - name: Terraform Init
+    #         working-directory: terraform/
+    #         run: terraform init
 
-          - name: Terraform Validate
-            working-directory: terraform/
-            id: validate
-            run: terraform validate -no-color
+    #       - name: Terraform Validate
+    #         working-directory: terraform/
+    #         id: validate
+    #         run: terraform validate -no-color
 
-          - name: Terraform Plan or Apply
-            env:
-              FREECASH_SESSION_ID: ${{ secrets.FREECASH_SESSION_ID }}
-            run: terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }} -var="freecash_session_id=${{ secrets.FREECASH_SESSION_ID }}"
-            working-directory: terraform/
+    #       - name: Terraform Plan or Apply
+    #         env:
+    #           FREECASH_SESSION_ID: ${{ secrets.FREECASH_SESSION_ID }}
+    #         run: terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }} -var="freecash_session_id=${{ secrets.FREECASH_SESSION_ID }}"
+    #         working-directory: terraform/
 
-          - name: Terraform Output
-            id: output
-            working-directory: terraform/
-            run: |
-              echo "::set-output name=s3_bucket_name::$(terraform output -raw s3_bucket_name)"
-              echo "::set-output name=sns_topic_arn::$(terraform output -raw sns_topic_arn)"
-              echo "::set-output name=lambda_function_role_arn::$(terraform output -raw lambda_function_role_arn)"
+    #       - name: Terraform Output
+    #         id: output
+    #         working-directory: terraform/
+    #         run: |
+    #           echo "::set-output name=s3_bucket_name::$(terraform output -raw s3_bucket_name)"
+    #           echo "::set-output name=sns_topic_arn::$(terraform output -raw sns_topic_arn)"
+    #           echo "::set-output name=lambda_function_role_arn::$(terraform output -raw lambda_function_role_arn)"
 
     # TODO: use lambda layer for forward object to another regions
     prepare-deploy-function:
-      needs: deploy-base-resource
-      if: github.event.inputs.action == 'apply'
-      runs-on: ubuntu-latest
-      steps:
-        - name: Checkout code
-          uses: actions/checkout@v3
+        needs: deploy-base-resource
+        if: github.event.inputs.action == 'apply'
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
 
-        - name: Build Lambda Layer
-          run: |
-            npm install --production
-            zip -r layer.zip node_modules
-            echo "::set-output name=layer_zip_path::$(pwd)/layer.zip"
+            - name: Set up Node.js
+              uses: actions/setup-node@v3
+              with:
+                  node-version: '20'
 
-        - name: Upload Lambda Layer Artifact
-          uses: actions/upload-artifact@v3
-          with:
-            name: layer-zip
-            path: layer.zip
+            - name: Install dependencies
+              run: npm install --production
 
-        - name: Build and Zip Source Code
-          run: |
-            ls -la
-            npm install tsx
-            npx tsx
-            ls -la
-            zip -r source.zip dist/
-            echo "::set-output name=source_zip_path::$(pwd)/source.zip"
+            - name: Upload Lambda Layer Artifact
+              uses: actions/upload-artifact@v3
+              with:
+                  name: layer-zip
+                  path: layer.zip
 
-        - name: Upload Source Code Artifact
-          uses: actions/upload-artifact@v3
-          with:
-            name: source-zip
-            path: source.zip
+            - name: Compile TypeScript
+              run: |
+                  npm install tsx
+                  npx tsc
 
-    deploy-lambda-function: 
-      needs: [deploy-base-resource, prepare-deploy-function]
-      if: github.event.inputs.action == 'apply'
-      runs-on: ubuntu-latest
-      strategy:
-        matrix:
-          region: ['us-east-1', 'us-west-2', 'eu-west-1']
-      steps:
-        - name: Checkout code
-          uses: actions/checkout@v3
+            - name: Build and Zip Source Code
+              run: |
+                  ls -la
+                  zip -r source.zip dist/
+                  echo "::set-output name=source_zip_path::$(pwd)/source.zip"
 
-        - name: Set up Cloud SDK with Auth
-          uses: ./.github/actions/setup-auth-aws
-          id: setup-aws-with-auth
+            - name: Build Lambda Layer
+              run: |
+                  zip -r layer.zip node_modules
+                  echo "::set-output name=layer_zip_path::$(pwd)/layer.zip"
 
-        - name: Download Lambda Layer Artifact
-          uses: actions/download-artifact@v3
-          with:
-            name: layer-zip
-            path: .
+            - name: Upload Source Code Artifact
+              uses: actions/upload-artifact@v3
+              with:
+                  name: source-zip
+                  path: source.zip
 
-        - name: Download Source Code Artifact
-          uses: actions/download-artifact@v3
-          with:
-            name: source-zip
-            path: .
+    deploy-lambda-function:
+        needs: [deploy-base-resource, prepare-deploy-function]
+        if: github.event.inputs.action == 'apply'
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                region: ['us-east-1', 'us-west-2', 'eu-west-1']
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
 
-        - name: Create lambda layer version in each region 
-          env:
-            AWS_REGION: ${{ matrix.region }}
-          run: |
-            if aws lambda get-layer-version --layer-name lambda_layer --version-number 1 --region $AWS_REGION; then
-              echo "Layer already exists in $AWS_REGION"
-            else
-              echo "Layer does not exist in $AWS_REGION"
-              aws lambda publish-layer-version \
-                  --layer-name crawler_layer \
-                  --description "Common dependencies for crawler functions" \
-                  --zip-file fileb://layer.zip \
-                  --compatible-runtimes nodejs20.x
-            fi
+            - name: Set up Cloud SDK with Auth
+              uses: ./.github/actions/setup-auth-aws
+              id: setup-aws-with-auth
 
+            - name: Download Lambda Layer Artifact
+              uses: actions/download-artifact@v3
+              with:
+                  name: layer-zip
+                  path: .
 
-        - name: Deploy Lambda Function
-          env:
-            AWS_REGION: ${{ matrix.region }}
-            S3_BUCKET_NAME: minttown-pf-crawler-data-bucket-test
-            SNS_TOPIC_ARN: arn:aws:sns:us-west-2:340258365836:crawler-cross-account-notification
-            LAMBDA_FUNCTION_ROLE_ARN: arn:aws:iam::340258365836:role/crawler_function_role
-          run: |
-            if aws lambda get-function --function-name lambda_crawler_function --region $AWS_REGION; then
-              echo "Function already exists in $AWS_REGION"
-            else
-              echo "Function does not exist in $AWS_REGION"
-              aws lambda create-function --region $AWS_REGION \
-                --function-name lambda_crawler_function \
-                --zip-file fileb://source.zip \
-                --role arn:aws:iam::340258365836:role/crawler_function_role \
-                --handler dist/lambda_handler.handler \
-                --runtime nodejs20.x \
-                --timeout 30 \
-                --layers arn:aws:lambda:$AWS_REGION:340258365836:layer:crawler_layer \
-                --environment Variables="{COUNTRY_CODE=$AWS_REGION,SNS_TOPIC_ARN=$SNS_TOPIC_ARN,S3_BUCKET=$S3_BUCKET_NAME,FREECASH_SESSION_ID=${{ secrets.FREECASH_SESSION_ID }}}"
-              fi
+            - name: Download Source Code Artifact
+              uses: actions/download-artifact@v3
+              with:
+                  name: source-zip
+                  path: .
+
+            - name: Create lambda layer version in each region
+              env:
+                  AWS_REGION: ${{ matrix.region }}
+              run: |
+                  if aws lambda get-layer-version --layer-name lambda_layer --version-number 1 --region $AWS_REGION; then
+                    echo "Layer already exists in $AWS_REGION"
+                  else
+                    echo "Layer does not exist in $AWS_REGION"
+                    aws lambda publish-layer-version \
+                        --layer-name crawler_layer \
+                        --description "Common dependencies for crawler functions" \
+                        --zip-file fileb://layer.zip \
+                        --compatible-runtimes nodejs20.x
+                  fi
+
+            - name: Deploy Lambda Function
+              env:
+                  AWS_REGION: ${{ matrix.region }}
+                  S3_BUCKET_NAME: minttown-pf-crawler-data-bucket-test
+                  SNS_TOPIC_ARN: arn:aws:sns:us-west-2:340258365836:crawler-cross-account-notification
+                  LAMBDA_FUNCTION_ROLE_ARN: arn:aws:iam::340258365836:role/crawler_function_role
+              run: |
+                  if aws lambda get-function --function-name lambda_crawler_function --region $AWS_REGION; then
+                    echo "Function already exists in $AWS_REGION"
+                  else
+                    echo "Function does not exist in $AWS_REGION"
+                    aws lambda create-function --region $AWS_REGION \
+                      --function-name lambda_crawler_function \
+                      --zip-file fileb://source.zip \
+                      --role arn:aws:iam::340258365836:role/crawler_function_role \
+                      --handler dist/lambda_handler.handler \
+                      --runtime nodejs20.x \
+                      --timeout 30 \
+                      --layers arn:aws:lambda:$AWS_REGION:340258365836:layer:crawler_layer \
+                      --environment Variables="{COUNTRY_CODE=$AWS_REGION,SNS_TOPIC_ARN=$SNS_TOPIC_ARN,S3_BUCKET=$S3_BUCKET_NAME,FREECASH_SESSION_ID=${{ secrets.FREECASH_SESSION_ID }}}"
+                    fi
