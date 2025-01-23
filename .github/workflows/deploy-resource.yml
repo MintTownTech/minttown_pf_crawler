@@ -81,12 +81,6 @@ jobs:
             - name: Install dependencies
               run: npm install --production
 
-            - name: Upload Lambda Layer Artifact
-              uses: actions/upload-artifact@v3
-              with:
-                  name: layer-zip
-                  path: layer.zip
-
             - name: Compile TypeScript
               run: |
                   npm install tsx
@@ -110,6 +104,12 @@ jobs:
               with:
                   name: source-zip
                   path: source.zip
+
+            - name: Upload Lambda Layer Artifact
+              uses: actions/upload-artifact@v3
+              with:
+                  name: layer-zip
+                  path: layer/layer.zip
 
     deploy-lambda-function:
         # needs: [deploy-base-resource, prepare-deploy-function]
