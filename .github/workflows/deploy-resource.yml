@@ -87,9 +87,13 @@ jobs:
                   cp -r node_modules ./nodejs/
                   ls -la
                   zip -r layer.zip nodejs
-                  mv layer.zip ../
-                  cd ../
                   du -csh layer.zip
+
+            - name: Upload Lambda Layer Artifact
+              uses: actions/upload-artifact@v3
+              with:
+                  name: layer-zip
+                  path: layer.zip
 
             - name: Compile TypeScript
               run: |
@@ -106,12 +110,6 @@ jobs:
               with:
                   name: source-zip
                   path: source.zip
-
-            - name: Upload Lambda Layer Artifact
-              uses: actions/upload-artifact@v3
-              with:
-                  name: layer-zip
-                  path: layer.zip
 
     deploy-lambda-function:
         # needs: [deploy-base-resource, prepare-deploy-function]
