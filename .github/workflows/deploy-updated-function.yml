@@ -62,7 +62,6 @@ jobs:
     #           matrix.account == 'prd' && 'arn:aws:iam::045372454064:role/oidc-github-actions-prd-role' }}
 
     prepare-deploy-function:
-        needs: deploy-base-resource
         runs-on: ubuntu-latest
         steps:
             - name: Checkout code
@@ -107,7 +106,7 @@ jobs:
                   path: source.zip
 
     deploy-lambda-function:
-        needs: [deploy-base-resource, prepare-deploy-function]
+        needs: prepare-deploy-function
         runs-on: ubuntu-latest
         strategy:
             matrix:
