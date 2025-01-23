@@ -110,7 +110,8 @@ jobs:
                   path: source.zip
 
     deploy-lambda-function:
-        needs: [deploy-base-resource, prepare-deploy-function]
+        # needs: [deploy-base-resource, prepare-deploy-function]
+        needs: prepare-deploy-function
         if: github.event.inputs.action == 'apply'
         runs-on: ubuntu-latest
         strategy:
