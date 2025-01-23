@@ -96,13 +96,15 @@ jobs:
               run: |
                   ls -la
                   zip -r source.zip dist/
-                  echo "::set-output name=source_zip_path::$(pwd)/source.zip"
 
             - name: Build Lambda Layer
               run: |
-                  zip -r layer.zip node_modules
-                  echo "::set-output name=layer_zip_path::$(pwd)/layer.zip"
-
+                  mkdir -p layer/nodejs
+                  cp -r node_modules layer/nodejs/
+                  cd layer
+                  ls -la
+                  zip -r layer.zip nodejs
+                  cd ..
             - name: Upload Source Code Artifact
               uses: actions/upload-artifact@v3
               with:
