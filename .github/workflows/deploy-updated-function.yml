@@ -4,23 +4,12 @@ run-name: Deploy Updated function ${{ github.event.inputs.function }} ${{ github
 on:
     workflow_dispatch:
         inputs:
-            function:
-                description: 'Infra to deploy'
+            # Implement resource deploy by bash script
+            enable_resource_deploy:
+                description: 'Enable for resource deploy'
                 required: true
-                default: 'crawler'
-                type: choice
-                options:
-                    - 'crawler'
-                    - 'updated-function'
-
-            action:
-                description: 'Infra to deploy'
-                required: true
-                default: 'plan'
-                type: choice
-                options:
-                    - 'plan'
-                    - 'apply'
+                type: boolean
+                default: true
 
 permissions:
     id-token: write
