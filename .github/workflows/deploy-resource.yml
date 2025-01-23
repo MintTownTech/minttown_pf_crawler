@@ -79,7 +79,6 @@ jobs:
         - name: Build Lambda Layer
           run: |
             npm install --production
-            npm run build
             zip -r layer.zip node_modules
             echo "::set-output name=layer_zip_path::$(pwd)/layer.zip"
 
@@ -90,7 +89,7 @@ jobs:
             echo "::set-output name=source_zip_path::$(pwd)/source.zip"
 
     deploy-lambda-function: 
-      needs: deploy-base-resource
+      needs: [deploy-base-resource, prepare-deploy-function]
       if: github.event.inputs.action == 'apply'
       runs-on: ubuntu-latest
       strategy:
