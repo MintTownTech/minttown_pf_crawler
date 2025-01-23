@@ -19,6 +19,7 @@ resource "aws_s3_bucket_notification" "s3_bucket_notification" {
   depends_on = [aws_sns_topic_policy.default]
 }
 
+
 # Lambda Function (Account Crawler)
 # resource "aws_lambda_function" "crawler_function" {
 #   function_name = "lambda_crawler_function"

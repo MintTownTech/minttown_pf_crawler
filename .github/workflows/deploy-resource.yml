@@ -66,11 +66,34 @@ jobs:
               echo "::set-output name=sns_topic_arn::$(terraform output -raw sns_topic_arn)"
               echo "::set-output name=lambda_function_role_arn::$(terraform output -raw lambda_function_role_arn)"
 
-    deploy-lambda-function:
+    # TODO: use lambda layer for forward object to another regions
+
+    prepare-deploy-function:
       needs: deploy-base-resource
       if: github.event.inputs.action == 'apply'
       runs-on: ubuntu-latest
-      strategy:  
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v3
+
+        - name: Build Lambda Layer
+          run: |
+            npm install --production
+            npm run build
+            zip -r layer.zip node_modules
+            echo "::set-output name=layer_zip_path::$(pwd)/layer.zip"
+
+        - name: Build and Zip Source Code
+          run: |
+            npx tsx
+            zip -r source.zip dist/
+            echo "::set-output name=source_zip_path::$(pwd)/source.zip"
+
+    deploy-lambda-function: 
+      needs: deploy-base-resource
+      if: github.event.inputs.action == 'apply'
+      runs-on: ubuntu-latest
+      strategy:
         matrix:
           region: ['us-east-1', 'us-west-2', 'eu-west-1']
       steps:
@@ -80,6 +103,21 @@ jobs:
         - name: Set up Cloud SDK with Auth
           uses: ./.github/actions/setup-auth-aws
           id: setup-aws-with-auth
+
+        - name: Create lambda layer version in each region 
+          env:
+            AWS_REGION: ${{ matrix.region }}
+          run: |
+            if aws lambda get-layer-version --layer-name lambda_layer --version-number 1 --region $AWS_REGION; then
+              echo "Layer already exists in $AWS_REGION"
+            else
+              echo "Layer does not exist in $AWS_REGION"
+              aws lambda publish-layer-version \
+                  --layer-name crawler_layer \
+                  --description "Common dependencies for crawler functions" \
+                  --zip-file fileb://${{ needs.prepare-deploy-function.outputs.layer_zip_path }} \
+                  --compatible-runtimes nodejs20.x
+            fi
 
         - name: Deploy Lambda Function
           env:
@@ -94,10 +132,11 @@ jobs:
               echo "Function does not exist in $AWS_REGION"
               aws lambda create-function --region $AWS_REGION \
                 --function-name lambda_crawler_function \
-                --code S3Bucket=$S3_BUCKET_NAME,S3Key=lambda_function.zip \
+                --zip-file fileb://${{ needs.prepare-deploy-function.outputs.source_zip_path }} \
                 --role arn:aws:iam::340258365836:role/crawler_function_role \
                 --handler dist/lambda_handler.handler \
                 --runtime nodejs20.x \
                 --timeout 30 \
+                --layers arn:aws:lambda:$AWS_REGION:340258365836:layer:crawler_layer \
                 --environment Variables="{COUNTRY_CODE=$AWS_REGION,SNS_TOPIC_ARN=$SNS_TOPIC_ARN,S3_BUCKET=$S3_BUCKET_NAME,FREECASH_SESSION_ID=${{ secrets.FREECASH_SESSION_ID }}}"
               fi

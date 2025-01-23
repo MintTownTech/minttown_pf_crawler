@@ -198,3 +198,6 @@ terraform/override.tf.json
 terraform/terraform.rc
 terraform/terraform.tfvars
 terraform/.terraform.lock.hcl
+
+#
+layer/
