@@ -1,0 +1,55 @@
+name: Set up AWS SDK with Auth
+description: Using OIDC AWS Credentials and login Amazon ECR
+
+inputs:
+    environment:
+        description: Target environment to deploy.
+        required: true
+
+runs:
+    using: 'composite'
+    steps:
+        - name: Checkout code
+          uses: actions/checkout@v3
+
+        - name: Set up Node.js
+          uses: actions/setup-node@v3
+          with:
+              node-version: '20'
+
+        - name: Install dependencies
+          run: npm install --production
+          shell: bash
+
+        - name: Build Lambda Layer
+          run: |
+              mkdir -p nodejs
+              cp -r node_modules ./nodejs/
+              ls -la
+              zip -r layer.zip nodejs
+              du -csh layer.zip
+          shell: bash
+
+        - name: Upload Lambda Layer Artifact
+          uses: actions/upload-artifact@v3
+          with:
+              name: layer-zip
+              path: layer.zip
+
+        - name: Compile TypeScript
+          run: |
+              npm install tsx
+              npx tsc
+          shell: bash
+
+        - name: Build and Zip Source Code
+          run: |
+              ls -la
+              zip -r source.zip dist/
+          shell: bash
+
+        - name: Upload Source Code Artifact
+          uses: actions/upload-artifact@v3
+          with:
+              name: source-zip
+              path: source.zip
