@@ -143,16 +143,15 @@ jobs:
               env:
                   AWS_REGION: ${{ matrix.region }}
               run: |
-                  if aws lambda get-layer-version --layer-name lambda_layer --version-number 1 --region $AWS_REGION; then
-                    echo "Layer already exists in $AWS_REGION"
-                  else
-                    echo "Layer does not exist in $AWS_REGION"
-                    aws lambda publish-layer-version \
-                        --layer-name crawler_layer \
-                        --description "Common dependencies for crawler functions" \
-                        --zip-file fileb://layer.zip \
-                        --compatible-runtimes nodejs20.x
-                  fi
+                  LAYER_VERSION=$(aws lambda publish-layer-version \
+                    --layer-name crawler_layer \
+                    --description "Common dependencies for crawler functions" \
+                    --zip-file fileb://layer.zip \
+                    --compatible-runtimes nodejs20.x \
+                    --region $AWS_REGION \
+                    --query 'LayerVersionArn' \
+                    --output text)
+                  echo "LAYER_VERSION=$LAYER_VERSION" >> $GITHUB_ENV
 
             - name: Deploy Lambda Function
               env:
@@ -160,9 +159,15 @@ jobs:
                   S3_BUCKET_NAME: minttown-pf-crawler-data-bucket-test
                   SNS_TOPIC_ARN: arn:aws:sns:us-west-2:340258365836:crawler-cross-account-notification
                   LAMBDA_FUNCTION_ROLE_ARN: arn:aws:iam::340258365836:role/crawler_function_role
+                  LAYER_VERSION: ${{ env.LAYER_VERSION }}
+
               run: |
                   if aws lambda get-function --function-name lambda_crawler_function --region $AWS_REGION; then
                     echo "Function already exists in $AWS_REGION"
+                    aws lambda update-function-code \
+                      --function-name lambda_crawler_function \
+                      --zip-file fileb://source.zip \
+                      --region $AWS_REGION
                   else
                     echo "Function does not exist in $AWS_REGION"
                     aws lambda create-function --region $AWS_REGION \
@@ -172,6 +177,6 @@ jobs:
                       --handler dist/lambda_handler.handler \
                       --runtime nodejs20.x \
                       --timeout 30 \
-                      --layers arn:aws:lambda:$AWS_REGION:340258365836:layer:crawler_layer \
+                      --layers $LAYER_VERSION \
                       --environment Variables="{COUNTRY_CODE=$AWS_REGION,SNS_TOPIC_ARN=$SNS_TOPIC_ARN,S3_BUCKET=$S3_BUCKET_NAME,FREECASH_SESSION_ID=${{ secrets.FREECASH_SESSION_ID }}}"
                     fi
