@@ -1,22 +1,67 @@
-name: Deploy Updated
-run-name: Deploy Updated function ${{ github.event.inputs.function }} ${{ github.event.inputs.action }} by ${{ github.actor }}
+name: Deploy Crawler
+run-name: Deploy Resource ${{ github.event.inputs.function }} ${{ github.event.inputs.action }} by ${{ github.actor }}
 
 on:
     workflow_dispatch:
         inputs:
-            # Implement resource deploy by bash script
             enable_resource_deploy:
                 description: 'Enable for resource deploy'
                 required: true
                 type: boolean
                 default: true
 
+            action:
+                description: 'Infra to deploy'
+                required: true
+                default: 'plan'
+                type: choice
+                options:
+                    - 'plan'
+                    - 'apply'
+
 permissions:
     id-token: write
     contents: read
 
 jobs:
+    deploy-base-resource:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+
+            - name: Setup Terraform
+              if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
+              uses: hashicorp/setup-terraform@v2
+              with:
+                  cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+            - name: Set up Cloud SDK with Auth
+              if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
+              uses: ./.github/actions/setup-auth-aws
+              id: setup-aws-with-auth
+
+            - name: Terraform Init
+              if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
+              working-directory: terraform/
+              run: terraform init
+
+            - name: Terraform Validate
+              if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
+              working-directory: terraform/
+              id: validate
+              run: terraform validate -no-color
+
+            - name: Terraform Plan or Apply
+              if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
+              env:
+                  FREECASH_SESSION_ID: ${{ secrets.FREECASH_SESSION_ID }}
+              run: terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }} -var="freecash_session_id=${{ secrets.FREECASH_SESSION_ID }}"
+              working-directory: terraform/
+
+    # TODO: use lambda layer for forward object to another regions
     prepare-deploy-function:
+        needs: deploy-base-resource
         runs-on: ubuntu-latest
         steps:
             - name: Checkout code
@@ -61,21 +106,18 @@ jobs:
                   path: source.zip
 
     deploy-lambda-function:
-        needs: prepare-deploy-function
+        needs: [deploy-base-resource, prepare-deploy-function]
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                aws_account: ['dev', 'sb', 'game']
-
+                region: ['us-east-1', 'us-west-2', 'eu-west-1', 'ap-southeast-1']
         steps:
             - name: Checkout code
               uses: actions/checkout@v3
 
             - name: Set up Cloud SDK with Auth
-              uses: ./.github/actions/setup-aws-with-auth
+              uses: ./.github/actions/setup-auth-aws
               id: setup-aws-with-auth
-              with:
-                  environment: ${{ matrix.aws_account }}
 
             - name: Download Lambda Layer Artifact
               uses: actions/download-artifact@v3
@@ -91,7 +133,7 @@ jobs:
 
             - name: Create lambda layer version in each region
               env:
-                  AWS_REGION: us-east-2
+                  AWS_REGION: ${{ matrix.region }}
               run: |
                   LAYER_VERSION=$(aws lambda publish-layer-version \
                     --layer-name crawler_layer \
@@ -105,37 +147,28 @@ jobs:
 
             - name: Deploy Lambda Function
               env:
-                  ACCOUNT: ${{ matrix.aws_account }}
-                  AWS_REGION: us-east-2
+                  AWS_REGION: ${{ matrix.region }}
+                  S3_BUCKET_NAME: minttown-pf-crawler-data-bucket-test
+                  SNS_TOPIC_ARN: arn:aws:sns:us-west-2:340258365836:crawler-cross-account-notification
+                  LAMBDA_FUNCTION_ROLE_ARN: arn:aws:iam::340258365836:role/crawler_function_role
+                  LAYER_VERSION: ${{ env.LAYER_VERSION }}
+
               run: |
-                  if aws lambda get-function --function-name updated-function-$ACCOUNT --region $AWS_REGION; then
+                  if aws lambda get-function --function-name lambda_crawler_function --region $AWS_REGION; then
                     echo "Function already exists in $AWS_REGION"
                     aws lambda update-function-code \
-                      --function-name updated-function-$ACCOUNT \
+                      --function-name lambda_crawler_function \
                       --zip-file fileb://source.zip \
                       --region $AWS_REGION
                   else
                     echo "Function does not exist in $AWS_REGION"
                     aws lambda create-function --region $AWS_REGION \
-                      --function-name updated-function-$ACCOUNT \
+                      --function-name lambda_crawler_function \
                       --zip-file fileb://source.zip \
                       --role arn:aws:iam::340258365836:role/crawler_function_role \
-                      --handler dist/updated_handler.handler \
+                      --handler dist/lambda_handler.handler \
                       --runtime nodejs20.x \
                       --timeout 30 \
                       --layers $LAYER_VERSION \
-                      --profile ${{ matrix.aws_account }} \
                       --environment Variables="{COUNTRY_CODE=$AWS_REGION,SNS_TOPIC_ARN=$SNS_TOPIC_ARN,S3_BUCKET=$S3_BUCKET_NAME,FREECASH_SESSION_ID=${{ secrets.FREECASH_SESSION_ID }}}"
                     fi
-
-            # - name: Set up Cloud SDK with Auth
-            #   if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
-            #   uses: ./.github/actions/resource-deploy-updated-function
-            #   id: resource-deploy-updated-function
-            #   with:
-            #       ENVIRONMENT: ${{ matrix.aws_account }}
-            #       ROLE_NAME: updated_function_role
-            #       POLICY_NAME: updated_function_s3_policy
-            #       SNS_TOPIC_ARN: arn:aws:sns:us-west-2:340258365836:crawler-cross-account-notification
-            #       LAMBDA_FUNCTION_NAME: updated-function-${{ matrix.aws_account }}
-            #       LAMBDA_FUNCTION_ARN: arn:aws:lambda:us-west-2:340258365836:function:updated-function-${{ matrix.aws_account }}

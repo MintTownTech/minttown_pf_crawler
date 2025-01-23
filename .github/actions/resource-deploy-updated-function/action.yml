@@ -1,0 +1,77 @@
+name: Resource Deploy Updated Function
+description: Create resource in each environment
+
+inputs:
+    ENVIRONMENT:
+        description: Target environment to deploy.
+        required: true
+    ROLE_NAME:
+        description: The name of the IAM role.
+        required: true
+    POLICY_NAME:
+        description: The name of the IAM policy.
+        required: true
+    SNS_TOPIC_ARN:
+        description: The ARN of the SNS topic.
+        required: true
+    LAMBDA_FUNCTION_NAME:
+        description: The name of the Lambda function.
+        required: true
+    LAMBDA_FUNCTION_ARN:
+        description: The ARN of the Lambda function.
+        required: true
+runs:
+    using: 'composite'
+    steps:
+        - name: Create Iam role
+          run: |
+              if ! aws --profile $ENVIRONMENT iam get-role --role-name "$ROLE_NAME" > /dev/null 2>&1; then
+                aws --profile $ENVIRONMENT iam create-role --role-name "$ROLE_NAME" --assume-role-policy-document '{
+                  "Version": "2012-10-17",
+                  "Statement": [
+                    {
+                      "Action": "sts:AssumeRole",
+                      "Effect": "Allow",
+                      "Principal": {
+                        "Service": "lambda.amazonaws.com"
+                      }
+                    }
+                  ]
+                }'
+              fi
+          shell: bash
+        - name: Create Iam policy
+          run: |
+              if ! aws --profile $ENVIRONMENT iam get-role-policy --role-name "$ROLE_NAME" --policy-name "$POLICY_NAME" > /dev/null 2>&1; then
+                aws --profile $ENVIRONMENT iam put-role-policy --role-name "$ROLE_NAME" --policy-name "$POLICY_NAME" --policy-document '{
+                  "Version": "2012-10-17",
+                  "Statement": [
+                    {
+                      "Effect": "Allow",
+                      "Action": "s3:GetObject",
+                      "Resource": "arn:aws:s3:::minttown-pf-crawler-data-bucket-test/*"
+                    }
+                  ]
+                }'
+              fi
+          shell: bash
+        - name: Attach Iam policy
+          run: |
+              if ! aws --profile $ENVIRONMENT iam list-attached-role-policies --role-name "$ROLE_NAME" | grep -q "AWSLambdaBasicExecutionRole"; then
+                aws --profile $ENVIRONMENT iam attach-role-policy --role-name "$ROLE_NAME" --policy-arn "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              fi
+          shell: bash
+
+        - name: Add Lambda permissions
+          run: |
+              if ! aws --profile $ENVIRONMENT lambda get-policy --function-name "$LAMBDA_FUNCTION_NAME" | grep -q "AllowSNSInvoke"; then
+                aws --profile $ENVIRONMENT lambda add-permission --function-name "$LAMBDA_FUNCTION_NAME" --statement-id "AllowSNSInvoke" --action "lambda:InvokeFunction" --principal "sns.amazonaws.com" --source-arn "$SNS_TOPIC_ARN"
+              fi
+          shell: bash
+
+        - name: Create SNS Topic Subcription
+          run: |
+              if ! aws --profile $ENVIRONMENT sns list-subscriptions-by-topic --topic-arn "$SNS_TOPIC_ARN" | grep -q "$LAMBDA_FUNCTION_ARN"; then
+                aws --profile $ENVIRONMENT sns subscribe --topic-arn "$SNS_TOPIC_ARN" --protocol "lambda" --notification-endpoint "$LAMBDA_FUNCTION_ARN"
+              fi
+          shell: bash
