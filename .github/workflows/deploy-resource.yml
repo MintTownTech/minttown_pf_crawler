@@ -89,8 +89,10 @@ jobs:
 
         - name: Build and Zip Source Code
           run: |
+            ls -la
             npm install tsx
             npx tsx
+            ls -la
             zip -r source.zip dist/
             echo "::set-output name=source_zip_path::$(pwd)/source.zip"
 
