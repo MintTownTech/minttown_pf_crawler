@@ -67,7 +67,6 @@ jobs:
               echo "::set-output name=lambda_function_role_arn::$(terraform output -raw lambda_function_role_arn)"
 
     # TODO: use lambda layer for forward object to another regions
-
     prepare-deploy-function:
       needs: deploy-base-resource
       if: github.event.inputs.action == 'apply'
@@ -82,11 +81,24 @@ jobs:
             zip -r layer.zip node_modules
             echo "::set-output name=layer_zip_path::$(pwd)/layer.zip"
 
+        - name: Upload Lambda Layer Artifact
+          uses: actions/upload-artifact@v3
+          with:
+            name: layer-zip
+            path: layer.zip
+
         - name: Build and Zip Source Code
           run: |
+            npm install tsx
             npx tsx
             zip -r source.zip dist/
             echo "::set-output name=source_zip_path::$(pwd)/source.zip"
+
+        - name: Upload Source Code Artifact
+          uses: actions/upload-artifact@v3
+          with:
+            name: source-zip
+            path: source.zip
 
     deploy-lambda-function: 
       needs: [deploy-base-resource, prepare-deploy-function]
@@ -103,6 +115,18 @@ jobs:
           uses: ./.github/actions/setup-auth-aws
           id: setup-aws-with-auth
 
+        - name: Download Lambda Layer Artifact
+          uses: actions/download-artifact@v3
+          with:
+            name: layer-zip
+            path: .
+
+        - name: Download Source Code Artifact
+          uses: actions/download-artifact@v3
+          with:
+            name: source-zip
+            path: .
+
         - name: Create lambda layer version in each region 
           env:
             AWS_REGION: ${{ matrix.region }}
@@ -114,9 +138,10 @@ jobs:
               aws lambda publish-layer-version \
                   --layer-name crawler_layer \
                   --description "Common dependencies for crawler functions" \
-                  --zip-file fileb://${{ needs.prepare-deploy-function.outputs.layer_zip_path }} \
+                  --zip-file fileb://layer.zip \
                   --compatible-runtimes nodejs20.x
             fi
+
 
         - name: Deploy Lambda Function
           env:
@@ -131,7 +156,7 @@ jobs:
               echo "Function does not exist in $AWS_REGION"
               aws lambda create-function --region $AWS_REGION \
                 --function-name lambda_crawler_function \
-                --zip-file fileb://${{ needs.prepare-deploy-function.outputs.source_zip_path }} \
+                --zip-file fileb://source.zip \
                 --role arn:aws:iam::340258365836:role/crawler_function_role \
                 --handler dist/lambda_handler.handler \
                 --runtime nodejs20.x \
