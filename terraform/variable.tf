@@ -26,6 +26,12 @@ variable "sandbox_aws_account_id" {
     default     = "309217545237"
 }
 
+variable "minttown_aws_account_ids" {
+  description = "Array of AWS Account IDs for the Sandbox Account"
+  type        = list(string)
+  default     = ["120849922260", "016759235640", "309217545237", "045372454064"]
+}
+
 variable "env" {
     description = "AWS Account ID for the Sandbox Account"
     type        = string
@@ -67,3 +73,4 @@ variable "TFC_AWS_RUN_ROLE_ARN" {
   default     = "arn:aws:iam::340258365836:role/minttown-pf-oidc-terraform-cloud-role"
   description = "The project under which a workspace will be created"
 }
+

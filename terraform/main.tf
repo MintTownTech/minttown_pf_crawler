@@ -19,25 +19,25 @@ resource "aws_s3_bucket_notification" "s3_bucket_notification" {
   depends_on = [aws_sns_topic_policy.default]
 }
 
-# Lambda Function A (Account Crawler)
-resource "aws_lambda_function" "crawler_function" {
-  function_name = "lambda_crawler_function"
-  s3_bucket     = aws_s3_bucket.data_bucket.id
-  s3_key        = "lambda_function.zip"
-  role          = aws_iam_role.crawler_function_role.arn
-  handler       = "dist/lambda_handler.handler"
-  runtime       = "nodejs20.x"
-  timeout       = 30  # Increase the timeout to 30 seconds
+# Lambda Function (Account Crawler)
+# resource "aws_lambda_function" "crawler_function" {
+#   function_name = "lambda_crawler_function"
+#   s3_bucket     = aws_s3_bucket.data_bucket.id
+#   s3_key        = "lambda_function.zip"
+#   role          = aws_iam_role.crawler_function_role.arn
+#   handler       = "dist/lambda_handler.handler"
+#   runtime       = "nodejs20.x"
+#   timeout       = 30  # Increase the timeout to 30 seconds
 
-  environment {
-    variables = {
-      SNS_TOPIC_ARN = aws_sns_topic.notification_topic.arn
-      S3_BUCKET     = aws_s3_bucket.data_bucket.id
-      FREECASH_SESSION_ID = var.freecash_session_id
-      COUNTRY = "US"
-    }
-  }
-}
+#   environment {
+#     variables = {
+#       SNS_TOPIC_ARN = aws_sns_topic.notification_topic.arn
+#       S3_BUCKET     = aws_s3_bucket.data_bucket.id
+#       FREECASH_SESSION_ID = var.freecash_session_id
+#       COUNTRY = "US"
+#     }
+#   }
+# }
 
 # IAM Role for Lambda Crawler
 resource "aws_iam_role" "crawler_function_role" {
@@ -103,10 +103,10 @@ resource "aws_s3_bucket_policy" "cross_crawler_aws_account_access" {
         Sid    = "AllowCrossAccountAccess"
         Effect = "Allow"
         Principal = {
-            AWS = [
-            "arn:aws:iam::${var.sandbox_aws_account_id}:root",
-            "arn:aws:iam::${var.sandbox_aws_account_id}:role/updated_function_role"
-            ]
+          AWS = [
+            "arn:aws:iam::309217545237:root",
+            "arn:aws:iam::309217545237:role/updated_function_role",
+          ]
         }
         Action = [
             "s3:GetObject",
@@ -144,7 +144,10 @@ resource "aws_sns_topic_policy" "default" {
         Sid    = "AllowSubscribeFromSpecificAccount"
         Effect = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::${var.sandbox_aws_account_id}:root"
+          # AWS = "arn:aws:iam::${var.sandbox_aws_account_id}:root"
+          AWS = [
+            for account_id in toset(var.minttown_aws_account_ids) : "arn:aws:iam::${account_id}:root"
+          ]
         }
         Action   = "SNS:Subscribe"
         Resource = aws_sns_topic.notification_topic.arn

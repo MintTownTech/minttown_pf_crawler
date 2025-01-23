@@ -2,7 +2,9 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import * as AWS from 'aws-sdk';
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-    console.log(event);
+    console.log(JSON.stringify(event));
+    const snsEvent = event as any; // Cast to any to access Records
+    console.log(JSON.stringify(snsEvent['Records'][0]['Sns']));
     const s3 = new AWS.S3();
     const bucketName = 'minttown-pf-crawler-data-bucket-test';
     const key = 'freecash/data.json';
@@ -33,3 +35,6 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         body: JSON.stringify({ message: 'Hello from update' }),
     };
 };
+
+// s3://buket-name/freecash/data-us.json
+// s3://buket-name/freecash/data-uk.json

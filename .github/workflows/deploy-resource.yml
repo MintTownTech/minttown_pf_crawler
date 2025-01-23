@@ -20,12 +20,15 @@ on:
         options:
           - "plan"
           - "apply"
+          
+
+
 permissions:
   id-token: write
   contents: read
 
 jobs:
-    deploy:
+    deploy-base-resource:
         runs-on: ubuntu-latest
         steps:
           - name: Checkout code
@@ -54,3 +57,52 @@ jobs:
               FREECASH_SESSION_ID: ${{ secrets.FREECASH_SESSION_ID }}
             run: terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }} -var="freecash_session_id=${{ secrets.FREECASH_SESSION_ID }}"
             working-directory: terraform/
+
+          - name: Terraform Output
+            id: output
+            working-directory: terraform/
+            run: |
+              echo "::set-output name=s3_bucket_name::$(terraform output -raw s3_bucket_name)"
+              echo "::set-output name=sns_topic_arn::$(terraform output -raw sns_topic_arn)"
+              echo "::set-output name=lambda_function_role_arn::$(terraform output -raw lambda_function_role_arn)"
+
+    deploy-lambda-function:
+      needs: deploy-base-resource
+      runs-on: ubuntu-latest
+      strategy:
+        matrix:
+          region: ['us-east-1', 'us-west-2', 'eu-west-1']
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v3
+
+        - name: Set up Cloud SDK with Auth
+          uses: ./.github/actions/setup-auth-aws
+          id: setup-aws-with-auth
+
+        - name: Deploy Lambda Function
+          env:
+            AWS_REGION: ${{ matrix.region }}
+            S3_BUCKET_NAME: ${{ steps.output.outputs.s3_bucket_name }}
+            SNS_TOPIC_ARN: ${{ steps.output.outputs.sns_topic_arn }}
+            LAMBDA_FUNCTION_ROLE_ARN: ${{ steps.output.outputs.lambda_function_role_arn }} 
+          run: |
+            if [ "${{ github.event.inputs.action }}" == "apply" ]; then
+              if aws lambda get-function --function-name lambda_crawler_function --region $AWS_REGION; then
+                echo "Function already exists in $AWS_REGION"
+              else
+                echo "Function does not exist in $AWS_REGION"
+                aws lambda create-function --region $AWS_REGION \
+                  --function-name lambda_crawler_function \
+                  --s3-bucket $S3_BUCKET_NAME \
+                  --s3-key lambda_function.zip \
+                  --role arn:aws:iam::340258365836:role/crawler_function_role \
+                  --handler dist/lambda_handler.handler \
+                  --runtime nodejs20.x \
+                  --timeout 30 \
+                  --environment Variables="{COUNTRY_CODE=$AWS_REGION,SNS_TOPIC_ARN=$SNS_TOPIC_ARN,S3_BUCKET=$S3_BUCKET_NAME,FREECASH_SESSION_ID=${{ secrets.FREECASH_SESSION_ID }}}"
+                fi
+            else
+              echo "Skipping Lambda function deployment as action is not 'apply'"
+            fi
+            
