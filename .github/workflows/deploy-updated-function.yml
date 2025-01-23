@@ -65,7 +65,7 @@ jobs:
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                aws_account: ['dev', 'sb', 'game']
+                aws_account: ['dev', 'sb']
 
         steps:
             - name: Checkout code
