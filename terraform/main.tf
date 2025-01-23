@@ -57,6 +57,11 @@ resource "aws_iam_role" "crawler_function_role" {
   })
 }
 
+resource "aws_iam_role_policy_attachment" "s3_read_only_access" {
+  role       = aws_iam_role.crawler_function_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+}
+
 # IAM Policy for Lambda A
 resource "aws_iam_role_policy" "crawler_function_policy" {
   role     = aws_iam_role.crawler_function_role.id
