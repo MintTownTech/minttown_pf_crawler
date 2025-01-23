@@ -1,16 +1,14 @@
-name: Deploy Infra
+name: Deploy Crawler
+run-name: Deploy Resource ${{ github.event.inputs.function }} ${{ github.event.inputs.action }} by ${{ github.actor }}
 
 on:
     workflow_dispatch:
         inputs:
-            function:
-                description: 'Infra to deploy'
+            enable_resource_deploy:
+                description: 'Enable for resource deploy'
                 required: true
-                default: 'crawler'
-                type: choice
-                options:
-                    - 'crawler'
-                    - 'updated-function'
+                type: boolean
+                default: true
 
             action:
                 description: 'Infra to deploy'
@@ -26,48 +24,48 @@ permissions:
     contents: read
 
 jobs:
-    # deploy-base-resource:
-    #     runs-on: ubuntu-latest
-    #     steps:
-    #       - name: Checkout code
-    #         uses: actions/checkout@v3
+    deploy-base-resource:
+        if: github.event.inputs.enable_resource_deploy == 'true'
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
 
-    #       - name: Setup Terraform
-    #         uses: hashicorp/setup-terraform@v2
-    #         with:
-    #           cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+            - name: Setup Terraform
+              uses: hashicorp/setup-terraform@v2
+              with:
+                  cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
-    #       - name: Set up Cloud SDK with Auth
-    #         uses: ./.github/actions/setup-auth-aws
-    #         id: setup-aws-with-auth
+            - name: Set up Cloud SDK with Auth
+              uses: ./.github/actions/setup-auth-aws
+              id: setup-aws-with-auth
 
-    #       - name: Terraform Init
-    #         working-directory: terraform/
-    #         run: terraform init
+            - name: Terraform Init
+              working-directory: terraform/
+              run: terraform init
 
-    #       - name: Terraform Validate
-    #         working-directory: terraform/
-    #         id: validate
-    #         run: terraform validate -no-color
+            - name: Terraform Validate
+              working-directory: terraform/
+              id: validate
+              run: terraform validate -no-color
 
-    #       - name: Terraform Plan or Apply
-    #         env:
-    #           FREECASH_SESSION_ID: ${{ secrets.FREECASH_SESSION_ID }}
-    #         run: terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }} -var="freecash_session_id=${{ secrets.FREECASH_SESSION_ID }}"
-    #         working-directory: terraform/
+            - name: Terraform Plan or Apply
+              env:
+                  FREECASH_SESSION_ID: ${{ secrets.FREECASH_SESSION_ID }}
+              run: terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }} -var="freecash_session_id=${{ secrets.FREECASH_SESSION_ID }}"
+              working-directory: terraform/
 
-    #       - name: Terraform Output
-    #         id: output
-    #         working-directory: terraform/
-    #         run: |
-    #           echo "::set-output name=s3_bucket_name::$(terraform output -raw s3_bucket_name)"
-    #           echo "::set-output name=sns_topic_arn::$(terraform output -raw sns_topic_arn)"
-    #           echo "::set-output name=lambda_function_role_arn::$(terraform output -raw lambda_function_role_arn)"
+            - name: Terraform Output
+              id: output
+              working-directory: terraform/
+              run: |
+                  echo "::set-output name=s3_bucket_name::$(terraform output -raw s3_bucket_name)"
+                  echo "::set-output name=sns_topic_arn::$(terraform output -raw sns_topic_arn)"
+                  echo "::set-output name=lambda_function_role_arn::$(terraform output -raw lambda_function_role_arn)"
 
     # TODO: use lambda layer for forward object to another regions
     prepare-deploy-function:
-        # needs: deploy-base-resource
-        if: github.event.inputs.action == 'apply'
+        needs: deploy-base-resource
         runs-on: ubuntu-latest
         steps:
             - name: Checkout code
@@ -112,13 +110,11 @@ jobs:
                   path: source.zip
 
     deploy-lambda-function:
-        # needs: [deploy-base-resource, prepare-deploy-function]
-        needs: prepare-deploy-function
-        if: github.event.inputs.action == 'apply'
+        needs: [deploy-base-resource, prepare-deploy-function]
         runs-on: ubuntu-latest
         strategy:
             matrix:
-                region: ['us-east-1', 'us-west-2', 'eu-west-1']
+                region: ['us-east-1', 'us-west-2', 'eu-west-1', 'ap-southeast-1']
         steps:
             - name: Checkout code
               uses: actions/checkout@v3
