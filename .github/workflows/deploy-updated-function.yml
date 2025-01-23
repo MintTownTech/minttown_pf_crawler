@@ -125,7 +125,7 @@ jobs:
 
             - name: Create lambda layer version in each region
               env:
-                  AWS_REGION: ${{ matrix.region }}
+                  AWS_REGION: us-east-2
               run: |
                   LAYER_VERSION=$(aws lambda publish-layer-version \
                     --layer-name crawler_layer \
@@ -139,22 +139,19 @@ jobs:
 
             - name: Deploy Lambda Function
               env:
-                  AWS_REGION: ${{ matrix.region }}
-                  S3_BUCKET_NAME: minttown-pf-crawler-data-bucket-test
-                  SNS_TOPIC_ARN: arn:aws:sns:us-west-2:340258365836:crawler-cross-account-notification
-                  LAMBDA_FUNCTION_ROLE_ARN: arn:aws:iam::340258365836:role/crawler_function_role
-                  LAYER_VERSION: ${{ env.LAYER_VERSION }}
+                  ACCOUNT: ${{ matrix.aws_account }}
+                  AWS_REGION: us-east-2
               run: |
-                  if aws lambda get-function --function-name updated-function-${{ maxtrix.aws_account }} --region $AWS_REGION; then
+                  if aws lambda get-function --function-name updated-function-$ACCOUNT --region $AWS_REGION; then
                     echo "Function already exists in $AWS_REGION"
                     aws lambda update-function-code \
-                      --function-name updated-function-${{ maxtrix.aws_account }} \
+                      --function-name updated-function-$ACCOUNT \
                       --zip-file fileb://source.zip \
                       --region $AWS_REGION
                   else
                     echo "Function does not exist in $AWS_REGION"
                     aws lambda create-function --region $AWS_REGION \
-                      --function-name updated-function-${{ maxtrix.aws_account }} \
+                      --function-name updated-function-$ACCOUNT \
                       --zip-file fileb://source.zip \
                       --role arn:aws:iam::340258365836:role/crawler_function_role \
                       --handler dist/updated_handler.handler \
