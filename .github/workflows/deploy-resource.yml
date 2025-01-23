@@ -84,9 +84,9 @@ jobs:
         - name: Deploy Lambda Function
           env:
             AWS_REGION: ${{ matrix.region }}
-            S3_BUCKET_NAME: ${{ steps.output.outputs.s3_bucket_name }}
-            SNS_TOPIC_ARN: ${{ steps.output.outputs.sns_topic_arn }}
-            LAMBDA_FUNCTION_ROLE_ARN: ${{ steps.output.outputs.lambda_function_role_arn }} 
+            S3_BUCKET_NAME: ${{ needs.deploy-base-resource.outputs.s3_bucket_name }}
+            SNS_TOPIC_ARN: ${{ needs.deploy-base-resource.outputs.sns_topic_arn }}
+            LAMBDA_FUNCTION_ROLE_ARN: ${{ needs.deploy-base-resource.outputs.lambda_function_role_arn }} 
           run: |
             if aws lambda get-function --function-name lambda_crawler_function --region $AWS_REGION; then
               echo "Function already exists in $AWS_REGION"
