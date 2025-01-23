@@ -122,6 +122,18 @@ jobs:
               with:
                   environment: ${{ matrix.aws_account }}
 
+            - name: Download Lambda Layer Artifact
+              uses: actions/download-artifact@v3
+              with:
+                  name: layer-zip
+                  path: .
+
+            - name: Download Source Code Artifact
+              uses: actions/download-artifact@v3
+              with:
+                  name: source-zip
+                  path: .
+
             - name: Create lambda layer version in each region
               env:
                   AWS_REGION: us-east-2
