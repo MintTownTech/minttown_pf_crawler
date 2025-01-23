@@ -81,6 +81,16 @@ jobs:
             - name: Install dependencies
               run: npm install --production
 
+            - name: Build Lambda Layer
+              run: |
+                  mkdir -p nodejs
+                  cp -r node_modules ./nodejs/
+                  ls -la
+                  zip -r layer.zip nodejs
+                  mv layer.zip ../
+                  cd ../
+                  du -csh layer.zip
+
             - name: Compile TypeScript
               run: |
                   npm install tsx
@@ -91,16 +101,6 @@ jobs:
                   ls -la
                   zip -r source.zip dist/
 
-            - name: Build Lambda Layer
-              run: |
-                  mkdir -p layer/nodejs
-                  cp -r node_modules layer/nodejs/
-                  cd layer
-                  ls -la
-                  zip -r layer.zip nodejs
-                  mv layer.zip ..
-                  cd ..
-                  du -csh layer.zip
             - name: Upload Source Code Artifact
               uses: actions/upload-artifact@v3
               with:
