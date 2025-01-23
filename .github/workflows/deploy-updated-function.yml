@@ -16,51 +16,6 @@ permissions:
     contents: read
 
 jobs:
-    # deploy:
-    # runs-on: ubuntu-latest
-    # steps:
-    #   - name: Checkout code
-    #     uses: actions/checkout@v3
-
-    # implement github action deploy lambda function
-    # - name: Deploy Lambda Function
-    #   uses: ./actions/crawler-terraform
-    #   with:
-    #     action: ${{ github.event.inputs.action }}
-    #     account: dev
-
-    # - name: Configure AWS credentials
-    #   uses: aws-actions/configure-aws-credentials@v2
-    #   with:
-    #       role-to-assume:
-    #           ${{ matrix.account == 'dev' && 'arn:aws:iam::340258365836:role/oidc-github-actions-dev-role' ||
-    #           matrix.account == 'sb' && 'arn:aws:iam::309217545237:role/oidc-github-actions-sb-role' ||
-    #           matrix.account == 'game' && 'arn:aws:iam::340258365836:role/oidc-github-actions-dev-role' ||
-    #           matrix.account == 'prd' && 'arn:aws:iam::045372454064:role/oidc-github-actions-prd-role' }}
-    #       aws-region: us-east-1
-
-    # - name: Check if Lambda function exists
-    #   id: check-lambda
-    #   run: |
-    #       aws lambda get-function --function-name ${{ matrix.account == 'dev' && 'updated_crawl_data_dev_function' ||
-    #         matrix.account == 'sb' && 'updated_crawl_data_sb_function' ||
-    #         matrix.account == 'game' && 'updated_crawl_data_game_function' ||
-    #         matrix.account == 'prd' && 'updated_crawl_data_prd_function' }} || echo "Function does not exist"
-    #   continue-on-error: true
-
-    # - name: Deploy Lambda Function to each account
-    #   uses: aws-actions/aws-lambda-deploy@v1
-    #   with:
-    #       function-name: ${{ matrix.account == 'dev' && 'updated_crawl_data_dev_function' ||
-    #           matrix.account == 'sb' && 'updated_crawl_data_sb_function' ||
-    #           matrix.account == 'game' && 'updated_crawl_data_game_function' ||
-    #           matrix.account == 'prd' && 'updated_crawl_data_prd_function' }}
-    #       zip-file: ./lambda_function.zip
-    #       role: ${{ matrix.account == 'dev' && 'arn:aws:iam::340258365836:role/oidc-github-actions-dev-role' ||
-    #           matrix.account == 'sb' && 'arn:aws:iam::309217545237:role/oidc-github-actions-sb-role' ||
-    #           matrix.account == 'game' && 'arn:aws:iam::340258365836:role/oidc-github-actions-dev-role' ||
-    #           matrix.account == 'prd' && 'arn:aws:iam::045372454064:role/oidc-github-actions-prd-role' }}
-
     prepare-deploy-function:
         runs-on: ubuntu-latest
         steps:
@@ -172,3 +127,15 @@ jobs:
                       --profile ${{ matrix.aws_account }} \
                       --environment Variables="{COUNTRY_CODE=$AWS_REGION,SNS_TOPIC_ARN=$SNS_TOPIC_ARN,S3_BUCKET=$S3_BUCKET_NAME,FREECASH_SESSION_ID=${{ secrets.FREECASH_SESSION_ID }}}"
                     fi
+
+            # - name: Set up Cloud SDK with Auth
+            #   if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
+            #   uses: ./.github/actions/resource-deploy-updated-function
+            #   id: resource-deploy-updated-function
+            #   with:
+            #       ENVIRONMENT: ${{ matrix.aws_account }}
+            #       ROLE_NAME: updated_function_role
+            #       POLICY_NAME: updated_function_s3_policy
+            #       SNS_TOPIC_ARN: arn:aws:sns:us-west-2:340258365836:crawler-cross-account-notification
+            #       LAMBDA_FUNCTION_NAME: updated-function-${{ matrix.aws_account }}
+            #       LAMBDA_FUNCTION_ARN: arn:aws:lambda:us-west-2:340258365836:function:updated-function-${{ matrix.aws_account }}

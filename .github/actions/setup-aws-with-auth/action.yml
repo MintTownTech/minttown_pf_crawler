@@ -27,6 +27,6 @@ runs:
         - name: Configure AWS CLI Profile
           run: |
               aws configure set profile.${{ inputs.environment }}.region us-west-2
-              aws configure set profile.${{ inputs.environment }}.role_arn ${{ fromJSON(env.aws_credentials_role)[inputs.environment] }}
+              aws configure set profile.${{ inputs.environment }}.role_arn ${{ env.aws_credentials_role }}
               aws configure set profile.${{ inputs.environment }}.source_profile default
           shell: bash
