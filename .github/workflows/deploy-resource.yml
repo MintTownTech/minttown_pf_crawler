@@ -99,8 +99,8 @@ jobs:
                   ls -la
                   zip -r layer.zip nodejs
                   mv layer.zip ..
-                  du -csh layer.zip
                   cd ..
+                  du -csh layer.zip
             - name: Upload Source Code Artifact
               uses: actions/upload-artifact@v3
               with:
