@@ -1,5 +1,5 @@
 name: Deploy Updated
-run-name: Deploy Updated function ${{ github.event.inputs.function }} ${{ github.event.inputs.action }} by ${{ github.actor }}
+run-name: Deploy Updated function ${{ github.event.inputs.function }} ${{ github.event.inputs.action }} by ${{ github.actor }} in ${{ github.event.inputs.environment }}
 
 on:
     workflow_dispatch:
@@ -19,6 +19,7 @@ on:
                 options:
                     - 'plan'
                     - 'apply'
+                    - 'destroy'
 
             environment:
                 description: 'Environment to deploy'
@@ -139,6 +140,11 @@ jobs:
             - name: Terraform Plan or Apply
               if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
               run: terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }}
+              working-directory: terraform/updated/
+
+            - name: Terraform Destroy
+              if: ${{ github.event.inputs.enable_resource_deploy == 'true' && github.event.inputs.action == 'destroy' }}
+              run: terraform destroy --auto-approve
               working-directory: terraform/updated/
 
     # deploy-lambda-function:
