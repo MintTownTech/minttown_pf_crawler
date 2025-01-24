@@ -16,52 +16,52 @@ permissions:
     contents: read
 
 jobs:
-    prepare-deploy-function:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v3
+    # prepare-deploy-function:
+    #     runs-on: ubuntu-latest
+    #     steps:
+    #         - name: Checkout code
+    #           uses: actions/checkout@v3
 
-            - name: Set up Node.js
-              uses: actions/setup-node@v3
-              with:
-                  node-version: '20'
+    #         - name: Set up Node.js
+    #           uses: actions/setup-node@v3
+    #           with:
+    #               node-version: '20'
 
-            - name: Install dependencies
-              run: npm install --production
+    #         - name: Install dependencies
+    #           run: npm install --production
 
-            - name: Build Lambda Layer
-              run: |
-                  mkdir -p nodejs
-                  cp -r node_modules ./nodejs/
-                  ls -la
-                  zip -r layer.zip nodejs
-                  du -csh layer.zip
+    #         - name: Build Lambda Layer
+    #           run: |
+    #               mkdir -p nodejs
+    #               cp -r node_modules ./nodejs/
+    #               ls -la
+    #               zip -r layer.zip nodejs
+    #               du -csh layer.zip
 
-            - name: Upload Lambda Layer Artifact
-              uses: actions/upload-artifact@v3
-              with:
-                  name: layer-zip
-                  path: layer.zip
+    #         - name: Upload Lambda Layer Artifact
+    #           uses: actions/upload-artifact@v3
+    #           with:
+    #               name: layer-zip
+    #               path: layer.zip
 
-            - name: Compile TypeScript
-              run: |
-                  npm install tsx
-                  npx tsc
+    #         - name: Compile TypeScript
+    #           run: |
+    #               npm install tsx
+    #               npx tsc
 
-            - name: Build and Zip Source Code
-              run: |
-                  ls -la
-                  zip -r source.zip dist/
+    #         - name: Build and Zip Source Code
+    #           run: |
+    #               ls -la
+    #               zip -r source.zip dist/
 
-            - name: Upload Source Code Artifact
-              uses: actions/upload-artifact@v3
-              with:
-                  name: source-zip
-                  path: source.zip
+    #         - name: Upload Source Code Artifact
+    #           uses: actions/upload-artifact@v3
+    #           with:
+    #               name: source-zip
+    #               path: source.zip
 
     deploy-lambda-function:
-        needs: prepare-deploy-function
+        # needs: prepare-deploy-function
         runs-on: ubuntu-latest
         strategy:
             matrix:
@@ -77,65 +77,53 @@ jobs:
               with:
                   environment: ${{ matrix.aws_account }}
 
-            - name: Download Lambda Layer Artifact
-              uses: actions/download-artifact@v3
-              with:
-                  name: layer-zip
-                  path: .
-
-            - name: Download Source Code Artifact
-              uses: actions/download-artifact@v3
-              with:
-                  name: source-zip
-                  path: .
-
-            - name: Create lambda layer version in each region
-              env:
-                  AWS_REGION: us-east-2
-              run: |
-                  LAYER_VERSION=$(aws lambda publish-layer-version \
-                    --layer-name crawler_layer \
-                    --description "Common dependencies for crawler functions" \
-                    --zip-file fileb://layer.zip \
-                    --compatible-runtimes nodejs20.x \
-                    --region $AWS_REGION \
-                    --query 'LayerVersionArn' \
-                    --output text)
-                  echo "LAYER_VERSION=$LAYER_VERSION" >> $GITHUB_ENV
-
-            - name: Deploy Lambda Function
-              env:
-                  ACCOUNT: ${{ matrix.aws_account }}
-                  AWS_REGION: us-east-2
-              run: |
-                  if aws lambda get-function --function-name updated-function-$ACCOUNT --region $AWS_REGION; then
-                    echo "Function already exists in $AWS_REGION"
-                    aws lambda update-function-code \
-                      --function-name updated-function-$ACCOUNT \
-                      --zip-file fileb://source.zip \
-                      --region $AWS_REGION
-                  else
-                    echo "Function does not exist in $AWS_REGION"
-                    aws lambda create-function --region $AWS_REGION \
-                      --function-name updated-function-$ACCOUNT \
-                      --zip-file fileb://source.zip \
-                      --role arn:aws:iam::340258365836:role/crawler_function_role \
-                      --handler dist/updated_handler.handler \
-                      --runtime nodejs20.x \
-                      --timeout 30 \
-                      --layers $LAYER_VERSION \
-                      --profile ${{ matrix.aws_account }} \
-                      --environment Variables="{COUNTRY_CODE=$AWS_REGION,SNS_TOPIC_ARN=$SNS_TOPIC_ARN,S3_BUCKET=$S3_BUCKET_NAME,FREECASH_SESSION_ID=${{ secrets.FREECASH_SESSION_ID }}}"
-                    fi
-
-            # - name: Set up Cloud SDK with Auth
-            #   if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
-            #   uses: ./.github/actions/resource-deploy-updated-function
-            #   id: resource-deploy-updated-function
+            # - name: Download Lambda Layer Artifact
+            #   uses: actions/download-artifact@v3
             #   with:
-            #       ENVIRONMENT: ${{ matrix.aws_account }}
-            #       ROLE_NAME: updated_function_role
-            #       POLICY_NAME: updated_function_s3_policy
-            #       SNS_TOPIC_ARN: arn:aws:sns:us-west-2:340258365836:crawler-cross-account-notification
-            #       LAMBDA_FUNCTION_NAME: updated-function-${{ matrix.aws_account }}
-            #       LAMBDA_FUNCTION_ARN: arn:aws:lambda:us-west-2:340258365836:function:updated-function-${{ matrix.aws_account }}
+            #       name: layer-zip
+            #       path: .
+
+            # - name: Download Source Code Artifact
+            #   uses: actions/download-artifact@v3
+            #   with:
+            #       name: source-zip
+            #       path: .
+
+            # - name: Create lambda layer version in each region
+            #   env:
+            #       AWS_REGION: us-east-2
+            #   run: |
+            #       LAYER_VERSION=$(aws lambda publish-layer-version \
+            #         --layer-name crawler_layer \
+            #         --description "Common dependencies for crawler functions" \
+            #         --zip-file fileb://layer.zip \
+            #         --compatible-runtimes nodejs20.x \
+            #         --region $AWS_REGION \
+            #         --query 'LayerVersionArn' \
+            #         --output text)
+            #       echo "LAYER_VERSION=$LAYER_VERSION" >> $GITHUB_ENV
+
+            # - name: Deploy Lambda Function
+            #   env:
+            #       ACCOUNT: ${{ matrix.aws_account }}
+            #       AWS_REGION: us-east-2
+            #   run: |
+            #       if aws lambda --profile ${{ maxtrix.aws_account }} get-function --function-name updated-function-$ACCOUNT --region $AWS_REGION; then
+            #         echo "Function already exists in $AWS_REGION"
+            #         aws lambda --profile ${{ maxtrix.aws_account }} update-function-code \
+            #           --function-name updated-function-$ACCOUNT \
+            #           --zip-file fileb://source.zip \
+            #           --region $AWS_REGION
+            #       else
+            #         echo "Function does not exist in $AWS_REGION"
+            #         aws lambda create-function --region $AWS_REGION \
+            #           --function-name updated-function-$ACCOUNT \
+            #           --zip-file fileb://source.zip \
+            #           --role arn:aws:iam::340258365836:role/crawler_function_role \
+            #           --handler dist/updated_handler.handler \
+            #           --runtime nodejs20.x \
+            #           --timeout 30 \
+            #           --layers $LAYER_VERSION \
+            #           --profile ${{ matrix.aws_account }} \
+            #           --environment Variables="{COUNTRY_CODE=$AWS_REGION,SNS_TOPIC_ARN=$SNS_TOPIC_ARN,S3_BUCKET=$S3_BUCKET_NAME,FREECASH_SESSION_ID=${{ secrets.FREECASH_SESSION_ID }}}"
+            #         fi

@@ -1,4 +1,3 @@
-
 resource "aws_iam_role" "updated_function_role" {
   name     = "updated_function_role_${var.env}"
   assume_role_policy = jsonencode({

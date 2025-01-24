@@ -11,6 +11,10 @@ runs:
     steps:
         - name: OIDC AWS Credentials
           uses: aws-actions/configure-aws-credentials@v3
+          with:
+              aws-region: 'us-west-2'
+              role-to-assume: ${{ fromJSON(env.aws_credentials_role)[inputs.environment] }}
+              audience: sts.amazonaws.com
           env:
               aws_credentials_role: |
                   {
@@ -19,16 +23,16 @@ runs:
                     "game": "arn:aws:iam::340258365836:role/oidc-github-actions-dev-role",
                     "prd": "arn:aws:iam::045372454064:role/oidc-github-actions-prd-role"
                   }
-          with:
-              aws-region: 'us-west-2'
-              role-to-assume: ${{ fromJSON(env.aws_credentials_role)[inputs.environment] }}
-              audience: sts.amazonaws.com
-
+        - name: login Amazon ECR
+          id: login-ecr
+          uses: aws-actions/amazon-ecr-login@v1
+        - name: Echo ECR Registry
+          run: echo ${{ steps.login-ecr.outputs.registry }}
+          shell: bash
         - name: Configure AWS CLI Profile
           run: |
-              aws configure set region us-west-2
-              aws configure set role_arn ${{ fromJSON(env.aws_credentials_role)[inputs.environment] }}
-              aws configure set source_profile ${{ inputs.environment }}
+              aws configure set profile.${{ inputs.environment }}.region us-west-2
+              aws configure set profile.${{ inputs.environment }}.output json
+              aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+              aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           shell: bash
-          env:
-              AWS_PROFILE: ${{ inputs.environment }}
