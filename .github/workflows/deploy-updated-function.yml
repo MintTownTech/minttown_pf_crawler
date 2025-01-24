@@ -116,7 +116,7 @@ jobs:
               uses: ./.github/actions/setup-aws-with-auth
               id: setup-aws-with-auth
               env:
-                  environment: ${{ github.event.inputs.environment }}
+                  AWS_ACCOUNT_ID: ${{ github.event.inputs.environment == 'dev' && '340258365836' || github.event.inputs.environment == 'sb' && '309217545237' || github.event.inputs.environment == 'game' && '340258365836' || github.event.inputs.environment == 'prd' && '045372454064' }}
 
             - name: Terraform setup backend-config
               env:

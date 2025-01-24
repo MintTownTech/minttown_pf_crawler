@@ -41,7 +41,7 @@ jobs:
               uses: ./.github/actions/setup-aws-with-auth
               id: setup-aws-with-auth
               env:
-                  environment: dev
+                  AWS_ACCOUNT_ID: '340258365836'
 
             - name: Terraform setup backend-config
               env:
@@ -128,6 +128,8 @@ jobs:
             - name: Set up Cloud SDK with Auth
               uses: ./.github/actions/setup-auth-aws
               id: setup-aws-with-auth
+              env:
+                  AWS_ACCOUNT_ID: '340258365836'
 
             - name: Download Lambda Layer Artifact
               uses: actions/download-artifact@v3
