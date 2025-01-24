@@ -41,13 +41,18 @@ jobs:
               uses: ./.github/actions/setup-auth-aws
               id: setup-aws-with-auth
 
+            - name: Terraform setup backend-config
+              env:
+                  WORKSPACE: 'minttown_pf_infra_crawler'
+              run: |
+                  FILEPATH="./terraform/crawler/terraform.tf"
+                  sed -i "s/terraform_workspace_name_here/$WORKSPACE/g" "$FILEPATH"
+                  echo "Replaced terraform_workspace_name_here with $WORKSPACE in $FILEPATH"
+
             - name: Terraform Init
               if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
               working-directory: terraform/crawler/
-              run: |
-                  terraform init \
-                  -backend-config="organization=Minttown" \
-                  -backend-config="workspaces.name=minttown_pf_infra_crawler"
+              run: terraform init
 
             - name: Terraform Validate
               if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
