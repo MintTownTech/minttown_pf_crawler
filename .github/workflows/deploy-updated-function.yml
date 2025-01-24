@@ -119,7 +119,7 @@ jobs:
               uses: aws-actions/configure-aws-credentials@v3
               with:
                   aws-region: 'us-west-2'
-                  role-to-assume: arn:aws:iam::${{ steps.set-aws-account-id.outputs.aws_account_id }}:role/oidc-github-actions-dev-role
+                  role-to-assume: arn:aws:iam::${{ steps.set-aws-account-id.outputs.aws_account_id }}:role/oidc-github-actions-${{ github.event.inputs.environment }}-role
                   audience: sts.amazonaws.com
 
             - name: Terraform setup backend-config
