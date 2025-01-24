@@ -88,6 +88,10 @@ jobs:
             - name: Checkout code
               uses: actions/checkout@v3
 
+            - name: Set AWS Account ID
+              id: set-aws-account-id
+              run: echo "::set-output name=aws_account_id::${{ github.event.inputs.environment == 'dev' && '340258365836' || github.event.inputs.environment == 'sb' && '309217545237' || github.event.inputs.environment == 'game' && '340258365836' || github.event.inputs.environment == 'prd' && '045372454064' }}"
+
             - name: Download Lambda Layer Artifact
               uses: actions/download-artifact@v3
               with:
@@ -115,10 +119,8 @@ jobs:
               uses: aws-actions/configure-aws-credentials@v3
               with:
                   aws-region: 'us-west-2'
-                  role-to-assume: arn:aws:iam::$AWS_ACCOUNT_ID:role/oidc-github-actions-dev-role
+                  role-to-assume: arn:aws:iam::${{ steps.set-aws-account-id.outputs.aws_account_id }}:role/oidc-github-actions-dev-role
                   audience: sts.amazonaws.com
-              env:
-                  AWS_ACCOUNT_ID: ${{ github.event.inputs.environment == 'dev' && '340258365836' || github.event.inputs.environment == 'sb' && '309217545237' || github.event.inputs.environment == 'game' && '340258365836' || github.event.inputs.environment == 'prd' && '045372454064' }}
 
             - name: Terraform setup backend-config
               env:
