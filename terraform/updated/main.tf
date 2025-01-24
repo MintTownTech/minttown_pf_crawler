@@ -1,5 +1,22 @@
+resource "aws_lambda_function" "updated_function" {
+  function_name = "lambda_updated_function"
+  filename        = "./lambda_function.zip"
+  role          = aws_iam_role.updated_function_role.arn
+  handler       = "dist/updated_handler.handler"
+  runtime       = "nodejs20.x"
+  timeout       = 30  # Increase the timeout to 30 seconds
+}
+
+resource "aws_lambda_layer_version" "crawler_updated_function_layer" {
+  layer_name          = "crawler_updated_function_layer"
+  description         = "Common dependencies for crawler functions"
+  compatible_runtimes = ["nodejs14.x", "nodejs16.x", "nodejs18.x", "nodejs20.x"]
+  filename            = "layer.zip"
+  source_code_hash    = filebase64sha256("layer.zip")
+}
+
 resource "aws_iam_role" "updated_function_role" {
-  name     = "updated_function_role_${var.env}"
+  name     = "updated_function_role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [

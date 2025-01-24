@@ -36,49 +36,6 @@ permissions:
     contents: read
 
 jobs:
-    deploy-base-resource:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v3
-
-            - name: Setup Terraform
-              if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
-              uses: hashicorp/setup-terraform@v2
-              with:
-                  cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
-
-            - name: Set up Cloud SDK with Auth
-              if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
-              uses: ./.github/actions/setup-auth-aws
-              id: setup-aws-with-auth
-
-            - name: Terraform setup backend-config
-              env:
-                  WORKSPACE: 'minttown_pf_infra_crawler_${{ github.event.inputs.environment }}'
-              run: |
-                  FILEPATH="${GITHUB_WORKSPACE}/terraform/updated/terraform.tf"
-                  sed -i "s/terraform_workspace_name_here/$WORKSPACE/g" "$FILEPATH"
-                  echo "Replaced terraform_workspace_name_here with $WORKSPACE in $FILEPATH"
-
-            - name: Terraform Init
-              if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
-              working-directory: terraform/updated/
-              run: terraform init
-
-            - name: Terraform Validate
-              if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
-              working-directory: terraform/updated/
-              id: validate
-              run: terraform validate -no-color
-
-            - name: Terraform Plan or Apply
-              if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
-              env:
-                  FREECASH_SESSION_ID: ${{ secrets.FREECASH_SESSION_ID }}
-              run: terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }} -var="freecash_session_id=${{ secrets.FREECASH_SESSION_ID }}"
-              working-directory: terraform/updated/
-
     prepare-deploy-function:
         needs: deploy-base-resource
         runs-on: ubuntu-latest
@@ -124,18 +81,11 @@ jobs:
                   name: source-zip
                   path: source.zip
 
-    deploy-lambda-function:
-        needs: [deploy-base-resource, prepare-deploy-function]
+    deploy-base-resource:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout code
               uses: actions/checkout@v3
-
-            - name: Set up Cloud SDK with Auth
-              uses: ./.github/actions/setup-aws-with-auth
-              id: setup-aws-with-auth
-              with:
-                  environment: ${{ github.event.inputs.environment }}
 
             - name: Download Lambda Layer Artifact
               uses: actions/download-artifact@v3
@@ -149,40 +99,107 @@ jobs:
                   name: source-zip
                   path: .
 
-            - name: Create lambda layer version in each region
-              env:
-                  AWS_REGION: us-east-2
+            - name: Move zip to terraform folder
               run: |
-                  LAYER_VERSION=$(aws lambda publish-layer-version \
-                    --layer-name crawler_layer \
-                    --description "Common dependencies for crawler functions" \
-                    --zip-file fileb://layer.zip \
-                    --compatible-runtimes nodejs20.x \
-                    --region $AWS_REGION \
-                    --query 'LayerVersionArn' \
-                    --output text)
-                  echo "LAYER_VERSION=$LAYER_VERSION" >> $GITHUB_ENV
+                  mv layer.zip terraform/updated/
+                  mv source.zip terraform/updated/
 
-            - name: Deploy Lambda Function
+            - name: Setup Terraform
+              if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
+              uses: hashicorp/setup-terraform@v2
+              with:
+                  cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+            - name: Set up Cloud SDK with Auth
+              if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
+              uses: ./.github/actions/setup-auth-aws
+              id: setup-aws-with-auth
+
+            - name: Terraform setup backend-config
               env:
-                  ENVIRONMENT: ${{ github.event.inputs.environment }}
-                  AWS_REGION: us-east-2
+                  WORKSPACE: 'minttown_pf_infra_crawler_${{ github.event.inputs.environment }}'
               run: |
-                  if aws lambda get-function --function-name updated-function-$ENVIRONMENT --region $AWS_REGION; then
-                    echo "Function already exists in $AWS_REGION"
-                    aws lambda update-function-code \
-                      --function-name updated-function-$ENVIRONMENT \
-                      --zip-file fileb://source.zip \
-                      --region $AWS_REGION
-                  else
-                    echo "Function does not exist in $AWS_REGION"
-                    aws lambda create-function --region $AWS_REGION \
-                      --function-name updated-function-$ENVIRONMENT \
-                      --zip-file fileb://source.zip \
-                      --role arn:aws:iam::340258365836:role/crawler_function_role \
-                      --handler dist/updated_handler.handler \
-                      --runtime nodejs20.x \
-                      --timeout 30 \
-                      --layers $LAYER_VERSION \
-                      --environment Variables="{COUNTRY_CODE=$AWS_REGION,SNS_TOPIC_ARN=$SNS_TOPIC_ARN,S3_BUCKET=$S3_BUCKET_NAME,FREECASH_SESSION_ID=${{ secrets.FREECASH_SESSION_ID }}}"
-                    fi
+                  FILEPATH="${GITHUB_WORKSPACE}/terraform/updated/terraform.tf"
+                  sed -i "s/terraform_workspace_name_here/$WORKSPACE/g" "$FILEPATH"
+                  echo "Replaced terraform_workspace_name_here with $WORKSPACE in $FILEPATH"
+
+            - name: Terraform Init
+              if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
+              working-directory: terraform/updated/
+              run: terraform init
+
+            - name: Terraform Validate
+              if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
+              working-directory: terraform/updated/
+              id: validate
+              run: terraform validate -no-color
+
+            - name: Terraform Plan or Apply
+              if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
+              env:
+                  FREECASH_SESSION_ID: ${{ secrets.FREECASH_SESSION_ID }}
+              run: terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }} -var="freecash_session_id=${{ secrets.FREECASH_SESSION_ID }}"
+              working-directory: terraform/updated/
+
+    # deploy-lambda-function:
+    #     needs: [deploy-base-resource, prepare-deploy-function]
+    #     runs-on: ubuntu-latest
+    #     steps:
+    #         - name: Checkout code
+    #           uses: actions/checkout@v3
+
+    #         - name: Set up Cloud SDK with Auth
+    #           uses: ./.github/actions/setup-aws-with-auth
+    #           id: setup-aws-with-auth
+    #           with:
+    #               environment: ${{ github.event.inputs.environment }}
+
+    #         - name: Download Lambda Layer Artifact
+    #           uses: actions/download-artifact@v3
+    #           with:
+    #               name: layer-zip
+    #               path: .
+
+    #         - name: Download Source Code Artifact
+    #           uses: actions/download-artifact@v3
+    #           with:
+    #               name: source-zip
+    #               path: .
+
+    #         - name: Create lambda layer version in each region
+    #           env:
+    #               AWS_REGION: us-east-2
+    #           run: |
+    #               LAYER_VERSION=$(aws lambda publish-layer-version \
+    #                 --layer-name crawler_layer \
+    #                 --description "Common dependencies for crawler functions" \
+    #                 --zip-file fileb://layer.zip \
+    #                 --compatible-runtimes nodejs20.x \
+    #                 --region $AWS_REGION \
+    #                 --query 'LayerVersionArn' \
+    #                 --output text)
+    #               echo "LAYER_VERSION=$LAYER_VERSION" >> $GITHUB_ENV
+
+    # - name: Deploy Lambda Function
+    #   env:
+    #       ENVIRONMENT: ${{ github.event.inputs.environment }}
+    #       AWS_REGION: us-east-2
+    #   run: |
+    #       if aws lambda get-function --function-name updated-function-$ENVIRONMENT --region $AWS_REGION; then
+    #         echo "Function already exists in $AWS_REGION"
+    #         aws lambda update-function-code \
+    #           --function-name updated-function-$ENVIRONMENT \
+    #           --zip-file fileb://source.zip \
+    #           --region $AWS_REGION
+    #       else
+    #         echo "Function does not exist in $AWS_REGION"
+    #         aws lambda create-function --region $AWS_REGION \
+    #           --function-name updated-function-$ENVIRONMENT \
+    #           --zip-file fileb://source.zip \
+    #           --role arn:aws:iam::340258365836:role/crawler_function_role \
+    #           --handler dist/updated_handler.handler \
+    #           --runtime nodejs20.x \
+    #           --timeout 30 \
+    #           --layers $LAYER_VERSION \
+    #           --environment Variables="{COUNTRY_CODE=$AWS_REGION,SNS_TOPIC_ARN=$SNS_TOPIC_ARN,S3_BUCKET=$S3_BUCKET_NAME,FREECASH_SESSION_ID=${{ secrets.FREECASH_SESSION_ID }}}"
+    #         fi
