@@ -153,6 +153,7 @@ jobs:
                     --output text)
                   echo "LAYER_VERSION=$LAYER_VERSION" >> $GITHUB_ENV
 
+            # Currently stucked at terraform loop for each region -> will be fixed in the next PR
             - name: Deploy Lambda Function
               env:
                   AWS_REGION: ${{ matrix.region }}
