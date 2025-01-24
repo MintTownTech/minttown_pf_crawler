@@ -10,7 +10,8 @@ runs:
     using: 'composite'
     steps:
         - name: OIDC AWS Credentials
-          uses: aws-actions/configure-aws-credentials@v1-node16
+          uses: aws-actions/configure-aws-credentials@v3
           with:
               aws-region: 'us-west-2'
               role-to-assume: arn:aws:iam::${{ inputs.AWS_ACCOUNT_ID }}:role/oidc-github-actions-dev-role
+              audience: sts.amazonaws.com
