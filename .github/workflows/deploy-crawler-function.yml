@@ -45,7 +45,7 @@ jobs:
               env:
                   WORKSPACE: 'minttown_pf_infra_crawler'
               run: |
-                  FILEPATH="./terraform/crawler/terraform.tf"
+                  FILEPATH="${GITHUB_WORKSPACE}/terraform/crawler/terraform.tf"
                   sed -i "s/terraform_workspace_name_here/$WORKSPACE/g" "$FILEPATH"
                   echo "Replaced terraform_workspace_name_here with $WORKSPACE in $FILEPATH"
 
