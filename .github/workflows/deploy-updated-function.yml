@@ -136,9 +136,7 @@ jobs:
 
             - name: Terraform Plan or Apply
               if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
-              env:
-                  FREECASH_SESSION_ID: ${{ secrets.FREECASH_SESSION_ID }}
-              run: terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }} -var="freecash_session_id=${{ secrets.FREECASH_SESSION_ID }}"
+              run: terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }}"
               working-directory: terraform/updated/
 
     # deploy-lambda-function:
