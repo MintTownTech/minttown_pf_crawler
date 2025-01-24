@@ -114,6 +114,8 @@ jobs:
               if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
               uses: ./.github/actions/setup-auth-aws
               id: setup-aws-with-auth
+              env:
+                  environment: ${{ github.event.inputs.environment }}
 
             - name: Terraform setup backend-config
               env:
