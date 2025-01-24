@@ -77,6 +77,9 @@ jobs:
               with:
                   environment: ${{ matrix.aws_account }}
 
+            - name: Check AWS Account Info
+              run: aws sts get-caller-identity --profile ${{ matrix.aws_account }}
+
             # - name: Download Lambda Layer Artifact
             #   uses: actions/download-artifact@v3
             #   with:
