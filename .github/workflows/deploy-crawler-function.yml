@@ -44,7 +44,10 @@ jobs:
             - name: Terraform Init
               if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
               working-directory: terraform/crawler/
-              run: terraform init
+              run: |
+                  terraform init \
+                  -backend-config="organization=Minttown" \
+                  -backend-config="workspaces.name=minttown_pf_infra_crawler"
 
             - name: Terraform Validate
               if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
