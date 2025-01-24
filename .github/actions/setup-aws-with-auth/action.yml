@@ -10,11 +10,10 @@ runs:
     using: 'composite'
     steps:
         - name: OIDC AWS Credentials
-          uses: aws-actions/configure-aws-credentials@v3
+          uses: aws-actions/configure-aws-credentials@v1-node16
           with:
               aws-region: 'us-west-2'
               role-to-assume: ${{ fromJSON(env.aws_credentials_role)[inputs.environment] }}
-              audience: sts.amazonaws.com
           env:
               aws_credentials_role: |
                   {

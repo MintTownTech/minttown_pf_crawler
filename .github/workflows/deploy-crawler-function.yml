@@ -41,7 +41,7 @@ jobs:
               uses: ./.github/actions/setup-aws-with-auth
               id: setup-aws-with-auth
               env:
-                  environment: 'dev'
+                  environment: dev
 
             - name: Terraform setup backend-config
               env:
