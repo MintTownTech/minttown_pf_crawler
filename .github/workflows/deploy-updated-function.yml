@@ -136,7 +136,7 @@ jobs:
 
             - name: Terraform Plan or Apply
               if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
-              run: terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }}"
+              run: terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }}
               working-directory: terraform/updated/
 
     # deploy-lambda-function:
