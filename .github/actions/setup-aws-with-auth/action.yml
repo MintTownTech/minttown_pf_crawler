@@ -11,10 +11,6 @@ runs:
     steps:
         - name: OIDC AWS Credentials
           uses: aws-actions/configure-aws-credentials@v3
-          with:
-              aws-region: 'us-west-2'
-              role-to-assume: ${{ fromJSON(env.aws_credentials_role)[inputs.environment] }}
-              audience: sts.amazonaws.com
           env:
               aws_credentials_role: |
                   {
@@ -23,6 +19,10 @@ runs:
                     "game": "arn:aws:iam::340258365836:role/oidc-github-actions-dev-role",
                     "prd": "arn:aws:iam::045372454064:role/oidc-github-actions-prd-role"
                   }
+          with:
+              aws-region: 'us-west-2'
+              role-to-assume: ${{ fromJSON(env.aws_credentials_role)[inputs.environment] }}
+              audience: sts.amazonaws.com
 
         - name: Configure AWS CLI Profile
           run: |

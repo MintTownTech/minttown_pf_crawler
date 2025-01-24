@@ -43,12 +43,12 @@ jobs:
 
             - name: Terraform Init
               if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
-              working-directory: terraform/
+              working-directory: terraform/crawler/
               run: terraform init
 
             - name: Terraform Validate
               if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
-              working-directory: terraform/
+              working-directory: terraform/crawler/
               id: validate
               run: terraform validate -no-color
 
@@ -57,7 +57,7 @@ jobs:
               env:
                   FREECASH_SESSION_ID: ${{ secrets.FREECASH_SESSION_ID }}
               run: terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }} -var="freecash_session_id=${{ secrets.FREECASH_SESSION_ID }}"
-              working-directory: terraform/
+              working-directory: terraform/crawler/
 
     # TODO: use lambda layer for forward object to another regions
     prepare-deploy-function:

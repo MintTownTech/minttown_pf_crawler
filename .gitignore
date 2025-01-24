@@ -188,16 +188,16 @@ service-account.json
 *.http
 
 # terraform ignore file
-terraform/.terraform/
+terraform/*.terraform/
 terraform/*.tfstate
 terraform/*.tfstate.backup
 terraform/*.tfvars
-terraform/crash.log
-terraform/override.tf
-terraform/override.tf.json
-terraform/terraform.rc
-terraform/terraform.tfvars
-terraform/.terraform.lock.hcl
+terraform/*crash.log
+terraform/*override.tf
+terraform/*override.tf.json
+terraform/*terraform.rc
+terraform/*terraform.tfvars
+terraform/*.terraform.lock.hcl
 
 #
 layer/
