@@ -1,22 +1,22 @@
 resource "aws_lambda_function" "updated_function" {
-  function_name = "lambda_updated_function"
+  function_name = "updated-crawler-function-${var.env}"
   filename        = "./source.zip"
   role          = aws_iam_role.updated_function_role.arn
   handler       = "dist/updated_handler.handler"
   runtime       = "nodejs20.x"
   timeout       = 30  # Increase the timeout to 30 seconds
+  layers        = [aws_lambda_layer_version.crawler_updated_function_layer.arn]
 }
 
 resource "aws_lambda_layer_version" "crawler_updated_function_layer" {
-  layer_name          = "crawler_updated_function_layer"
+  layer_name          = "updated-layer-${var.env}"
   description         = "Common dependencies for crawler functions"
   compatible_runtimes = ["nodejs14.x", "nodejs16.x", "nodejs18.x", "nodejs20.x"]
-  filename            = "layer.zip"
-  source_code_hash    = filebase64sha256("layer.zip")
+  filename            = "./layer.zip"
 }
 
 resource "aws_iam_role" "updated_function_role" {
-  name     = "updated_function_role"
+  name     = "updated-crawler-function-role-${var.env}"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -32,7 +32,7 @@ resource "aws_iam_role" "updated_function_role" {
 }
 
 resource "aws_iam_role_policy" "updated_function_s3_policy" {
-  name = "updated_function_s3_policy"
+  name = "updated-crawler-function-s3-policy-${var.env}"
   role = aws_iam_role.updated_function_role.id
   policy = jsonencode({
     Version = "2012-10-17"
