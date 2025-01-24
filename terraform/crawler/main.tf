@@ -114,7 +114,7 @@ resource "aws_s3_bucket_policy" "cross_crawler_aws_account_access" {
             "arn:aws:iam::340258365836:role/updated-crawler-function-role-dev",
             "arn:aws:iam::309217545237:role/updated-crawler-function-role-sb",
             "arn:aws:iam::340258365836:role/updated-crawler-function-role-game",
-            "arn:aws:iam::045372454064:role/updated-crawler-function-role-prod",
+            "arn:aws:iam::045372454064:role/updated-crawler-function-role-prod"
           ]
         }
         Action = [
