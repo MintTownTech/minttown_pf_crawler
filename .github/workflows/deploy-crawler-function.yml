@@ -162,16 +162,16 @@ jobs:
                   LAYER_VERSION: ${{ env.LAYER_VERSION }}
 
               run: |
-                  if aws lambda get-function --function-name lambda_crawler_function --region $AWS_REGION; then
+                  if aws lambda get-function --function-name crawler-function-main --region $AWS_REGION; then
                     echo "Function already exists in $AWS_REGION"
                     aws lambda update-function-code \
-                      --function-name lambda_crawler_function \
+                      --function-name crawler-function-main \
                       --zip-file fileb://source.zip \
                       --region $AWS_REGION
                   else
                     echo "Function does not exist in $AWS_REGION"
                     aws lambda create-function --region $AWS_REGION \
-                      --function-name lambda_crawler_function \
+                      --function-name crawler-function-main \
                       --zip-file fileb://source.zip \
                       --role arn:aws:iam::340258365836:role/crawler_function_role \
                       --handler dist/lambda_handler.handler \
