@@ -111,10 +111,12 @@ jobs:
               with:
                   cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
-            - name: Set up Cloud SDK with Auth
-              if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
-              uses: ./.github/actions/setup-aws-with-auth
-              id: setup-aws-with-auth
+            - name: OIDC AWS Credentials
+              uses: aws-actions/configure-aws-credentials@v3
+              with:
+                  aws-region: 'us-west-2'
+                  role-to-assume: arn:aws:iam::$AWS_ACCOUNT_ID:role/oidc-github-actions-dev-role
+                  audience: sts.amazonaws.com
               env:
                   AWS_ACCOUNT_ID: ${{ github.event.inputs.environment == 'dev' && '340258365836' || github.event.inputs.environment == 'sb' && '309217545237' || github.event.inputs.environment == 'game' && '340258365836' || github.event.inputs.environment == 'prd' && '045372454064' }}
 
