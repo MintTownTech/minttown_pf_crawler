@@ -11,6 +11,15 @@ on:
                 type: boolean
                 default: true
 
+            action:
+                description: 'Infra to deploy'
+                required: true
+                default: 'plan'
+                type: choice
+                options:
+                    - 'plan'
+                    - 'apply'
+
             environment:
                 description: 'Environment to deploy'
                 required: true
