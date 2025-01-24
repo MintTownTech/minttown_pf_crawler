@@ -2,7 +2,7 @@ terraform {
   cloud { 
     organization = "MintTown" 
     workspaces { 
-      name = "terraform_workspace_name_here" 
+      name = "minttown_pf_infra_crawler_sb" 
     } 
   } 
 }

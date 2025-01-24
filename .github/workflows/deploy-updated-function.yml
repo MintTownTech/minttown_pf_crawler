@@ -113,7 +113,7 @@ jobs:
 
             - name: Set up Cloud SDK with Auth
               if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
-              uses: ./.github/actions/setup-auth-aws
+              uses: ./.github/actions/setup-aws-with-auth
               id: setup-aws-with-auth
               env:
                   environment: ${{ github.event.inputs.environment }}
