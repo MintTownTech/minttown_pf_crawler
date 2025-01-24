@@ -144,7 +144,7 @@ jobs:
                   env: ${{ github.event.inputs.environment }}
               run: |
                   terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }} \
-                    -var="crawler_aws_account_id=$crawler_aws_account_id \
+                    -var="crawler_aws_account_id=$crawler_aws_account_id" \
                     -var="env=$env"
               working-directory: terraform/updated/
 
@@ -155,7 +155,7 @@ jobs:
                   env: ${{ github.event.inputs.environment }}
               run: |
                   terraform destroy --auto-approve \
-                    -var="crawler_aws_account_id=340258365836" \
+                    -var="crawler_aws_account_id=$crawler_aws_account_id" \
                     -var="env=${{ github.event.inputs.environment }}"
               working-directory: terraform/updated/
 
