@@ -139,18 +139,24 @@ jobs:
 
             - name: Terraform Plan or Apply
               if: ${{ github.event.inputs.enable_resource_deploy == 'true' && github.event.inputs.action != 'destroy' }}
-              run: terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }}
               env:
                   crawler_aws_account_id: '340258365836'
                   env: ${{ github.event.inputs.environment }}
+              run: |
+                  terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }} \
+                    -var="crawler_aws_account_id=$crawler_aws_account_id \
+                    -var="env=$env"
               working-directory: terraform/updated/
 
             - name: Terraform Destroy
               if: ${{ github.event.inputs.enable_resource_deploy == 'true' && github.event.inputs.action == 'destroy' }}
-              run: terraform destroy --auto-approve
               env:
                   crawler_aws_account_id: '340258365836'
                   env: ${{ github.event.inputs.environment }}
+              run: |
+                  terraform destroy --auto-approve \
+                    -var="crawler_aws_account_id=340258365836" \
+                    -var="env=${{ github.event.inputs.environment }}"
               working-directory: terraform/updated/
 
     # deploy-lambda-function:
