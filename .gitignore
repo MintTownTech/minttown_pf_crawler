@@ -201,3 +201,5 @@ service-account.json
 
 #
 layer/
+*.zip
+

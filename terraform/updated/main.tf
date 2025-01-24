@@ -1,6 +1,6 @@
 resource "aws_lambda_function" "updated_function" {
   function_name = "lambda_updated_function"
-  filename        = "./lambda_function.zip"
+  filename        = "./source.zip"
   role          = aws_iam_role.updated_function_role.arn
   handler       = "dist/updated_handler.handler"
   runtime       = "nodejs20.x"
