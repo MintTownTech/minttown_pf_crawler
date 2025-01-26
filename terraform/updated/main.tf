@@ -56,11 +56,11 @@ resource "aws_lambda_permission" "allow_sns_invoke" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.updated_function.function_name
   principal     = "sns.amazonaws.com"
-  source_arn    = "arn:aws:sns:us-west-2:340258365836:crawler-cross-account-notification"
+  source_arn    = "arn:aws:sns:us-west-2:${var.crawler_aws_account_id}:crawler-cross-account-notification"
 }
 
 resource "aws_sns_topic_subscription" "updated_function" {
-  topic_arn = "arn:aws:sns:us-west-2:340258365836:crawler-cross-account-notification"
+  topic_arn = "arn:aws:sns:us-west-2:${var.crawler_aws_account_id}:crawler-cross-account-notification"
   protocol  = "lambda"
   endpoint  = aws_lambda_function.updated_function.arn
 }

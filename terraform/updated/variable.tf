@@ -6,4 +6,5 @@ variable "env" {
 variable "crawler_aws_account_id" {
   type        = string
   description = "Crawler AWS Account ID"
+  default     = "340258365836"
 }

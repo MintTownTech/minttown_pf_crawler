@@ -90,7 +90,13 @@ resource "aws_s3_bucket_policy" "cross_crawler_aws_account_access" {
         Sid    = "AllowCrossAccountAccess",
         Effect = "Allow",
         Principal = {
-          AWS = "arn:aws:iam::309217545237:role/updated-crawler-function-role-sb"
+          AWS = [
+            "arn:aws:iam::309217545237:root",
+            "arn:aws:iam::309217545237:role/updated-crawler-function-role-sb",
+            "arn:aws:iam::340258365836:role/updated-crawler-function-role-dev",
+            "arn:aws:iam::340258365836:role/updated-crawler-function-role-game",
+            "arn:aws:iam::045372454064:role/updated-crawler-function-role-prd",
+          ]
         },
         Action = [
           "s3:GetObject",
@@ -98,7 +104,7 @@ resource "aws_s3_bucket_policy" "cross_crawler_aws_account_access" {
           "s3:GetObjectAcl",
           "s3:ListBucket"
         ],
-        Resource = "${aws_s3_bucket.data_bucket.arn}/*"
+        Resource = ["${aws_s3_bucket.data_bucket.arn}/*", aws_s3_bucket.data_bucket.arn]
       },
       {
         Sid    = "AllowLambdaFunctionsInSameAccount",
@@ -112,7 +118,7 @@ resource "aws_s3_bucket_policy" "cross_crawler_aws_account_access" {
           "s3:GetObjectAcl",
           "s3:ListBucket"
         ],
-        Resource = "${aws_s3_bucket.data_bucket.arn}/*",
+        Resource = ["${aws_s3_bucket.data_bucket.arn}/*", aws_s3_bucket.data_bucket.arn],
         Condition = {
           StringEquals = {
             "aws:SourceAccount" = var.crawler_aws_account_id  # S3 bucket's account ID
@@ -151,6 +157,15 @@ resource "aws_sns_topic_policy" "default" {
           AWS = [
             for account_id in toset(var.minttown_aws_account_ids) : "arn:aws:iam::${account_id}:root"
           ]
+        }
+        Action   = "SNS:Subscribe"
+        Resource = aws_sns_topic.notification_topic.arn
+      },
+      {
+        Sid    = "AllowSubscribeFromSameAccount"
+        Effect = "Allow"
+        Principal = {
+            AWS = "arn:aws:iam::${var.crawler_aws_account_id}:root"
         }
         Action   = "SNS:Subscribe"
         Resource = aws_sns_topic.notification_topic.arn
