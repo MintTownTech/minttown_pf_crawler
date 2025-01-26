@@ -10,3 +10,7 @@ output "sns_topic_arn" {
 output "lambda_function_role_arn" {
   value = aws_iam_role.crawler_function_role.arn
 }
+
+output "crawler_function_role" {
+  value = aws_iam_role.crawler_function_role.arn
+}

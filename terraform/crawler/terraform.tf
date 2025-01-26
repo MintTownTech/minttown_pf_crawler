@@ -1,8 +1,8 @@
-terraform { 
-  cloud { 
-    organization = "MintTown" 
-    workspaces { 
-      name = "terraform_workspace_name_here" 
-    } 
-  } 
+terraform {
+  cloud {
+    organization = "MintTown"
+    workspaces {
+      name = "minttown_pf_infra_crawler"
+    }
+  }
 }

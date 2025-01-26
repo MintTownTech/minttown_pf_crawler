@@ -1,29 +1,24 @@
 variable "organization_id" {
-  description = "Session ID for Freecash API"
-  type        = string
-  default     = "o-7572cdq8uc"
+    description = "Session ID for Freecash API"
+    type        = string
+    default     = "o-7572cdq8uc"
 }
 variable "bucket_name" {
-  description = "AWS Account ID for the Crawler Account"
-  type        = string
-  default     = "minttown-pf-crawler-data-bucket-test"
-}
-
-variable "freecash_session_id" {
-  description = "freecash_session_id"
-  type        = string
+    description = "AWS Account ID for the Crawler Account"
+    type        = string
+    default     = "minttown-pf-crawler-data-bucket"
 }
 
 variable "crawler_aws_account_id" {
-  description = "AWS Account ID for the Crawler Account [dev account]"
-  type        = string
-  default     = "340258365836"
+    description = "AWS Account ID for the Crawler Account [dev account]"
+    type        = string
+    default     = "340258365836"
 }
 
 variable "sandbox_aws_account_id" {
-  description = "AWS Account ID for the Sandbox Account"
-  type        = string
-  default     = "309217545237"
+    description = "AWS Account ID for the Sandbox Account"
+    type        = string
+    default     = "309217545237"
 }
 
 variable "minttown_aws_account_ids" {
@@ -33,9 +28,9 @@ variable "minttown_aws_account_ids" {
 }
 
 variable "env" {
-  description = "AWS Account ID for the Sandbox Account"
-  type        = string
-  default     = "dev"
+    description = "AWS Account ID for the Sandbox Account"
+    type        = string
+    default     = "dev"
 }
 
 variable "tfc_aws_audience" {
@@ -89,5 +84,5 @@ variable "TF_ORG" {
 variable "regions" {
   description = "List of AWS regions to deploy the Lambda function"
   type        = list(string)
-  default     = ["us-west-2", "eu-central-1", "ap-southeast-1"]
+  default     = ["us-west-2", "eu-central-1" ,"ap-southeast-1"]
 }

@@ -141,7 +141,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         }
         const params = {
             Bucket: bucketName,
-            Key: `freecash/data-${process.env.COUNTRY_CODE}.json`,
+            Key: `freecash/data-${process.env.COUNTRY}.json`,
             Body: JSON.stringify(response.data),
             ContentType: 'application/json',
         };

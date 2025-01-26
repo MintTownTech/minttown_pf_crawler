@@ -23,8 +23,43 @@ terraform {
 }
 
 # -------------------------------------
+
 provider "aws" {
   region = "us-west-2"
+  default_tags {
+    tags = {
+      env       = var.env
+      ManagedBy = "Terraform"
+    }
+  }
+}
+
+# Create an alias for each region
+provider "aws" {
+  alias  = "ap-southeast-1"
+  region = "ap-southeast-1"
+  default_tags {
+    tags = {
+      env       = var.env
+      ManagedBy = "Terraform"
+    }
+  }
+}
+
+provider "aws" {
+  alias  = "eu-central-1"
+  region = "eu-central-1"
+  default_tags {
+    tags = {
+      env       = var.env
+      ManagedBy = "Terraform"
+    }
+  }
+}
+
+provider "aws" {
+  alias  = "eu-west-2"
+  region = "eu-west-2"
   default_tags {
     tags = {
       env       = var.env

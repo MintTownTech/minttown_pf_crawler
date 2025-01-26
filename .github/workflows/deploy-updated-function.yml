@@ -90,7 +90,7 @@ jobs:
 
             - name: Set AWS Account ID
               id: set-aws-account-id
-              run: echo "::set-output name=aws_account_id::${{ github.event.inputs.environment == 'dev' && '340258365836' || github.event.inputs.environment == 'sb' && '309217545237' || github.event.inputs.environment == 'game' && '340258365836' || github.event.inputs.environment == 'prd' && '045372454064' }}"
+              run: echo "aws_account_id=${{ github.event.inputs.environment == 'dev' && '340258365836' || github.event.inputs.environment == 'sb' && '309217545237' || github.event.inputs.environment == 'game' && '340258365836' || github.event.inputs.environment == 'prd' && '045372454064' }}" >> $GITHUB_ENV
 
             - name: Download Lambda Layer Artifact
               uses: actions/download-artifact@v3
