@@ -34,3 +34,16 @@ module "multi-regions-resource" {
     aws = aws.eu-west-2
   }
 }
+
+module "multi-regions-resource" {
+  source                = "./modules/multi-regions-resource"
+  freecash_session_id   = var.freecash_session_id
+  sns_topic_arn         = module.base-resources.sns_topic_arn
+  s3_bucket_name        = module.base-resources.s3_bucket_name
+  crawler_function_role = module.base-resources.crawler_function_role
+  country               = "eu-central-1"
+
+  providers = {
+    aws = aws.eu-central-1
+  }
+}

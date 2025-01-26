@@ -133,6 +133,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
     };
 
     try {
+        const ipResponse = await axios.get('https://api.ipify.org?format=json');
+        console.log(`Public IP Address: ${ipResponse.data.ip}`);
         const response = await axios.request(options);
         const s3 = new AWS.S3();
         const bucketName = process.env.S3_BUCKET;
