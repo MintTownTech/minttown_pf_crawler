@@ -22,7 +22,7 @@ module "base-resources" {
 }
 
 # Lambda function
-module "multi-regions-resource" {
+module "multi-regions-resource-eu-west-2" {
   source                = "./modules/multi-regions-resource"
   freecash_session_id   = var.freecash_session_id
   sns_topic_arn         = module.base-resources.sns_topic_arn
@@ -35,7 +35,7 @@ module "multi-regions-resource" {
   }
 }
 
-module "multi-regions-resource" {
+module "multi-regions-resource-eu-central-1" {
   source                = "./modules/multi-regions-resource"
   freecash_session_id   = var.freecash_session_id
   sns_topic_arn         = module.base-resources.sns_topic_arn
