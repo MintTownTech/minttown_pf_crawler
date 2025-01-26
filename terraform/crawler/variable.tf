@@ -6,7 +6,7 @@ variable "organization_id" {
 variable "bucket_name" {
   description = "AWS Account ID for the Crawler Account"
   type        = string
-  default     = "minttown-pf-crawler-data-bucket-test"
+  default     = "minttown-pf-crawler-data-bucket"
 }
 
 variable "freecash_session_id" {
