@@ -33,8 +33,9 @@ variable "minttown_aws_account_ids" {
 }
 
 variable "env" {
-  description = "AWS Account ID for the Sandbox Account"
+  description = "Environment name"
   type        = string
+  default     = "dev"
 }
 
 variable "tfc_aws_audience" {
