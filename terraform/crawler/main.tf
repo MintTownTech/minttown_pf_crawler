@@ -31,9 +31,12 @@ module "multi-regions-resource-eu-west-2" {
   country               = "eu-west-2"
   commit_hash = var.commit_hash
 
+
   providers = {
     aws = aws.eu-west-2
   }
+  
+  depends_on = [null_resource.force_update]
 }
 
 module "multi-regions-resource-eu-central-1" {
@@ -45,7 +48,21 @@ module "multi-regions-resource-eu-central-1" {
   country               = "eu-central-1"
   commit_hash = var.commit_hash
 
+
   providers = {
     aws = aws.eu-central-1
+  }
+
+  depends_on = [null_resource.force_update]
+}
+
+
+resource "null_resource" "force_update" {
+  triggers = {
+    commit_hash = var.commit_hash
+  }
+
+  provisioner "local-exec" {
+    command = "echo 'Forcing Lambda function update'"
   }
 }
