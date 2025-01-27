@@ -15,9 +15,9 @@ export const handler = async (event: any): Promise<any> => {
     const snsEvent = event['Records'][0]['Sns'];
     console.log(JSON.stringify(snsEvent));
 
-    const s3Client = new S3Client({ region: 'us-east-1' });
+    const s3Client = new S3Client({ region: 'us-west-2' });
     const bucketName = 'minttown-pf-crawler-data-bucket-test';
-    const key = 'freecash/data.json';
+    const key = 'freecash/data-us-west-2.json';
 
     try {
         const params = {

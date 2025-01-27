@@ -6,6 +6,7 @@ resource "aws_lambda_function" "updated_function" {
   runtime       = "nodejs20.x"
   timeout       = 30  # Increase the timeout to 30 seconds
   layers        = [aws_lambda_layer_version.crawler_updated_function_layer.arn]
+  publish       = true  # Force update code when resource has no changes
 }
 
 resource "aws_lambda_layer_version" "crawler_updated_function_layer" {
@@ -13,6 +14,9 @@ resource "aws_lambda_layer_version" "crawler_updated_function_layer" {
   description         = "Common dependencies for crawler functions"
   compatible_runtimes = ["nodejs14.x", "nodejs16.x", "nodejs18.x", "nodejs20.x"]
   filename            = "./layer.zip"
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_iam_role" "updated_function_role" {
