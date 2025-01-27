@@ -135,7 +135,7 @@ export const handler = async (event: any): Promise<any> => {
         const ipResponse = await axios.get('https://api.ipify.org?format=json');
         console.log(`Public IP Address: ${ipResponse.data.ip}`);
         const response = await axios.request(options);
-        const s3Client = new S3Client({ region: 'eu-west-2' }); // bucket is in eu-west-2
+        const s3Client = new S3Client({ region: 'us-west-2' }); // bucket is in eu-west-2
         const bucketName = process.env.S3_BUCKET;
         if (!bucketName) {
             throw new Error('S3_BUCKET is not set');
