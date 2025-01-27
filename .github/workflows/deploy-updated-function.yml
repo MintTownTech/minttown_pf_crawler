@@ -153,7 +153,7 @@ jobs:
               run: |
                   terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }} \
                     -var="crawler_aws_account_id=$crawler_aws_account_id" \
-                    -var="env=$env"
+                    -var="env=$env" \
                     -var="commit_hash=${{ steps.get-commit-hash.outputs.commit_hash }}"
               working-directory: terraform/updated/
 
