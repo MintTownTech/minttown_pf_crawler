@@ -155,7 +155,7 @@ jobs:
                   terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }} \
                     -var="crawler_aws_account_id=$crawler_aws_account_id" \
                     -var="env=$env" \
-                    -var="commit_hash=${{ steps.get-commit-hash.outputs.commit_hash }}"
+                    -var="commit_hash=${{ steps.get-commit-hash.outputs.commit_hash }}" \
                     -var="bucket_name=minttown-pf-crawler-data-bucket" \
 
               working-directory: terraform/updated/
