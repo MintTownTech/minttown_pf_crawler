@@ -19,7 +19,7 @@ resource "aws_lambda_function" "updated_function" {
   publish       = true  # Force update code when resource has no changes
   environment {
     variables = {
-      S3_BUCKET     = var.s3_bucket_name
+      S3_BUCKET     = var.bucket_name
     }
   }
   depends_on = [null_resource.force_update]
