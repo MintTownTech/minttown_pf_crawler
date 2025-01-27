@@ -1,5 +1,5 @@
 // filepath: /home/vennpham/workspaces/mint/github/minttown_pf_crawler/terraform/main.tf
-output "s3_bucket_name" {
+output "bucket_name" {
   value = aws_s3_bucket.data_bucket.bucket
 }
 

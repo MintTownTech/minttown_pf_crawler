@@ -26,7 +26,7 @@ module "multi-regions-resource-eu-west-2" {
   source                = "./modules/multi-regions-resource"
   freecash_session_id   = var.freecash_session_id
   sns_topic_arn         = module.base-resources.sns_topic_arn
-  s3_bucket_name        = module.base-resources.s3_bucket_name
+  bucket_name        = module.base-resources.bucket_name
   crawler_function_role = module.base-resources.crawler_function_role
   country               = "eu-west-2"
   commit_hash = var.commit_hash
@@ -42,7 +42,7 @@ module "multi-regions-resource-eu-central-1" {
   source                = "./modules/multi-regions-resource"
   freecash_session_id   = var.freecash_session_id
   sns_topic_arn         = module.base-resources.sns_topic_arn
-  s3_bucket_name        = module.base-resources.s3_bucket_name
+  bucket_name        = module.base-resources.bucket_name
   crawler_function_role = module.base-resources.crawler_function_role
   country               = "eu-central-1"
   commit_hash = var.commit_hash

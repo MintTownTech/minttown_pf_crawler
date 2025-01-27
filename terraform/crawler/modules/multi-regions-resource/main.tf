@@ -18,7 +18,7 @@ resource "aws_lambda_function" "crawler_function" {
   environment {
     variables = {
       SNS_TOPIC_ARN = var.sns_topic_arn
-      S3_BUCKET     = var.s3_bucket_name
+      S3_BUCKET     = var.bucket_name
       FREECASH_SESSION_ID = var.freecash_session_id
       COUNTRY = var.country
     }
