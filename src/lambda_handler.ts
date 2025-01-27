@@ -1,8 +1,7 @@
 import axios from 'axios';
-import AWS from 'aws-sdk';
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
-export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+export const handler = async (event: any): Promise<any> => {
     const sessionId = process.env.FREECASH_SESSION_ID;
     if (!sessionId) {
         return {
@@ -136,7 +135,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         const ipResponse = await axios.get('https://api.ipify.org?format=json');
         console.log(`Public IP Address: ${ipResponse.data.ip}`);
         const response = await axios.request(options);
-        const s3 = new AWS.S3();
+        const s3Client = new S3Client({});
         const bucketName = process.env.S3_BUCKET;
         if (!bucketName) {
             throw new Error('S3_BUCKET is not set');
@@ -148,7 +147,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
             ContentType: 'application/json',
         };
 
-        await s3.putObject(params).promise();
+        const command = new PutObjectCommand(params);
+        await s3Client.send(command);
 
         return {
             statusCode: 200,

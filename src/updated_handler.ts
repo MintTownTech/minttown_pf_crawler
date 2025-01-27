@@ -1,11 +1,21 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import * as AWS from 'aws-sdk';
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { Readable } from 'stream';
 
-export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+const streamToString = (stream: Readable): Promise<string> => {
+    const chunks: any[] = [];
+    return new Promise((resolve, reject) => {
+        stream.on('data', (chunk) => chunks.push(chunk));
+        stream.on('error', reject);
+        stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf-8')));
+    });
+};
+
+export const handler = async (event: any): Promise<any> => {
     console.log(JSON.stringify(event));
-    const snsEvent = event as any; // Cast to any to access Records
-    console.log(JSON.stringify(snsEvent['Records'][0]['Sns']));
-    const s3 = new AWS.S3();
+    const snsEvent = event['Records'][0]['Sns'];
+    console.log(JSON.stringify(snsEvent));
+
+    const s3Client = new S3Client({ region: 'us-east-1' });
     const bucketName = 'minttown-pf-crawler-data-bucket-test';
     const key = 'freecash/data.json';
 
@@ -15,9 +25,11 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
             Key: key,
         };
 
-        const data = await s3.getObject(params).promise();
+        const command = new GetObjectCommand(params);
+        const data = await s3Client.send(command);
         if (data.Body) {
-            const jsonData = JSON.parse(data.Body.toString('utf-8'));
+            const bodyString = await streamToString(data.Body as Readable);
+            const jsonData = JSON.parse(bodyString);
             if (Array.isArray(jsonData)) {
                 console.log(jsonData.slice(0, 2));
             } else {
@@ -35,6 +47,3 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
         body: JSON.stringify({ message: 'Hello from update' }),
     };
 };
-
-// s3://buket-name/freecash/data-us.json
-// s3://buket-name/freecash/data-uk.json
