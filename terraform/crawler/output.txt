@@ -1,1 +1,0 @@
-{"statusCode":200,"body":"{\"message\":\"Data written to S3 successfully\"}"}

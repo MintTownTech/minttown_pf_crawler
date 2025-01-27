@@ -22,3 +22,8 @@ variable "country" {
   description = "Country"
   type        = string
 }
+
+variable "hash_file" {
+  description = "Hash file"
+  type        = string
+}

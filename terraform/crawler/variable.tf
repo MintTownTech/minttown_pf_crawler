@@ -91,3 +91,8 @@ variable "regions" {
   type        = list(string)
   default     = ["us-west-2", "eu-central-1", "ap-southeast-1"]
 }
+
+variable "hash_file" {
+  description = "Hash file for the Lambda function"
+  type        = string
+}

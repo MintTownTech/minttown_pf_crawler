@@ -30,6 +30,7 @@ provider "aws" {
     tags = {
       env       = var.env
       ManagedBy = "Terraform"
+      project   = "freecash-crawler"
     }
   }
 }
@@ -42,6 +43,7 @@ provider "aws" {
     tags = {
       env       = var.env
       ManagedBy = "Terraform"
+      project   = "freecash-crawler"
     }
   }
 }
@@ -53,6 +55,7 @@ provider "aws" {
     tags = {
       env       = var.env
       ManagedBy = "Terraform"
+      project   = "freecash-crawler"
     }
   }
 }
@@ -64,6 +67,7 @@ provider "aws" {
     tags = {
       env       = var.env
       ManagedBy = "Terraform"
+      project   = "freecash-crawler"
     }
   }
 }

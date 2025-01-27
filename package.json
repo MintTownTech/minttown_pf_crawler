@@ -1,12 +1,17 @@
 {
     "name": "minttown-pf-analytics-freecash-crawler",
     "scripts": {
-        "format": "prettier -w ./src"
+        "format": "prettier -w ./src",
+        "build": "tsc --project tsconfig.build.json"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "^3.735.0",
+        "@aws-sdk/client-s3": "^3.731.1",
+        "@prisma/client": "^6.2.1",
         "axios": "^1.7.9",
-        "lodash": "^4.17.21"
+        "decimal.js": "^10.4.3",
+        "prisma": "^6.2.1",
+        "safe-stable-stringify": "^2.5.0",
+        "winston": "^3.17.0"
     },
     "devDependencies": {
         "@eslint/js": "^9.17.0",

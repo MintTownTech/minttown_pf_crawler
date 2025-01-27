@@ -1,30 +1,14 @@
-# Null resource to force updates
-resource "null_resource" "force_update" {
-  triggers = {
-    always_run = "${timestamp()}"
-  }
-
-  provisioner "local-exec" {
-    command = "echo 'Forcing Lambda function and layer update'"
-  }
-}
 # Lambda Function (Account Crawler)
 resource "aws_lambda_layer_version" "crawler_function_layer" {
   layer_name          = "crawler-layer"
   description         = "Common dependencies for crawler functions"
   compatible_runtimes = ["nodejs14.x", "nodejs16.x", "nodejs18.x", "nodejs20.x"]
-  filename            = "layer.zip"
-
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  depends_on = [null_resource.force_update]
+  filename            = "layer-${var.hash_file}.zip"
 }
 
 resource "aws_lambda_function" "crawler_function" {
   function_name = "crawler-function-main"
-  filename        = "source.zip"
+  filename        = "source-${var.hash_file}.zip"
   role          = var.crawler_function_role
   handler       = "dist/lambda_handler.handler"
   runtime       = "nodejs20.x"
@@ -39,11 +23,4 @@ resource "aws_lambda_function" "crawler_function" {
       COUNTRY = var.country
     }
   }
-  
-  lifecycle {
-    create_before_destroy = true
-    ignore_changes        = [filename]
-  }
-
-  depends_on = [null_resource.force_update]
 }

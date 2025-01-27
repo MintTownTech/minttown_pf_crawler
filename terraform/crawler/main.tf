@@ -29,6 +29,7 @@ module "multi-regions-resource-eu-west-2" {
   s3_bucket_name        = module.base-resources.s3_bucket_name
   crawler_function_role = module.base-resources.crawler_function_role
   country               = "eu-west-2"
+  hash_file = var.hash_file
 
   providers = {
     aws = aws.eu-west-2
@@ -42,6 +43,7 @@ module "multi-regions-resource-eu-central-1" {
   s3_bucket_name        = module.base-resources.s3_bucket_name
   crawler_function_role = module.base-resources.crawler_function_role
   country               = "eu-central-1"
+  hash_file = var.hash_file
 
   providers = {
     aws = aws.eu-central-1
