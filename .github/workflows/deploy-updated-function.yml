@@ -110,8 +110,9 @@ jobs:
 
             - name: Move zip to terraform folder
               run: |
-                  mv layer.zip terraform/updated/
-                  mv source.zip terraform/updated/
+                  COMMIT_HASH=${{ steps.get-commit-hash.outputs.commit_hash }}
+                  mv layer.zip terraform/updated/layer-${COMMIT_HASH}.zip
+                  mv source.zip terraform/updated/source-${COMMIT_HASH}.zip
 
             - name: Setup Terraform
               if: ${{ github.event.inputs.enable_resource_deploy == 'true' }}
