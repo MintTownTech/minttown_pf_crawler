@@ -1,22 +1,34 @@
+resource "null_resource" "force_update" {
+  triggers = {
+    commit_hash = var.commit_hash
+  }
+
+  provisioner "local-exec" {
+    command = "echo 'Forcing Lambda function update'"
+  }
+}
+
 resource "aws_lambda_function" "updated_function" {
   function_name = "updated-crawler-function-${var.env}"
-  filename        = "./source.zip"
+  filename        = "source-${var.commit_hash}.zip"
   role          = aws_iam_role.updated_function_role.arn
   handler       = "dist/updated_handler.handler"
   runtime       = "nodejs20.x"
   timeout       = 30  # Increase the timeout to 30 seconds
   layers        = [aws_lambda_layer_version.crawler_updated_function_layer.arn]
   publish       = true  # Force update code when resource has no changes
+  depends_on = [null_resource.force_update]
 }
 
 resource "aws_lambda_layer_version" "crawler_updated_function_layer" {
   layer_name          = "updated-layer-${var.env}"
   description         = "Common dependencies for crawler functions"
   compatible_runtimes = ["nodejs14.x", "nodejs16.x", "nodejs18.x", "nodejs20.x"]
-  filename            = "./layer.zip"
+  filename            = "layer-${var.commit_hash}.zip"
   lifecycle {
     create_before_destroy = true
   }
+  depends_on = [null_resource.force_update]
 }
 
 resource "aws_iam_role" "updated_function_role" {
