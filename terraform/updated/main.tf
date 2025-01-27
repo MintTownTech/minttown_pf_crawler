@@ -17,6 +17,11 @@ resource "aws_lambda_function" "updated_function" {
   timeout       = 30  # Increase the timeout to 30 seconds
   layers        = [aws_lambda_layer_version.crawler_updated_function_layer.arn]
   publish       = true  # Force update code when resource has no changes
+  environment {
+    variables = {
+      S3_BUCKET     = var.s3_bucket_name
+    }
+  }
   depends_on = [null_resource.force_update]
 }
 

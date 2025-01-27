@@ -156,6 +156,8 @@ jobs:
                     -var="crawler_aws_account_id=$crawler_aws_account_id" \
                     -var="env=$env" \
                     -var="commit_hash=${{ steps.get-commit-hash.outputs.commit_hash }}"
+                    -var="bucket_name=minttown-pf-crawler-data-bucket" \
+
               working-directory: terraform/updated/
 
             - name: Terraform Destroy

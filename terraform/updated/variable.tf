@@ -13,3 +13,8 @@ variable "commit_hash" {
   type        = string
   description = "Commit Hash"
 }
+
+variable "bucket_name" {
+  type        = string
+  description = "Bucket Name"
+}

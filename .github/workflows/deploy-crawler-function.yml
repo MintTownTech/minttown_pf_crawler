@@ -135,5 +135,9 @@ jobs:
               env:
                   COMMIT_HASH: ${{ steps.get-commit-hash.outputs.commit_hash }}
                   FREECASH_SESSION_ID: ${{ secrets.FREECASH_SESSION_ID }}
-              run: terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }} -var="freecash_session_id=${{ secrets.FREECASH_SESSION_ID }}" -var="commit_hash=${{ env.COMMIT_HASH }}"
+              run: |
+                  terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }} \
+                    -var="freecash_session_id=${{ secrets.FREECASH_SESSION_ID }}" \
+                    -var="commit_hash=${{ env.COMMIT_HASH }}" \
+                    -var="bucket_name=minttown-pf-crawler-data-bucket" \
               working-directory: terraform/crawler/
