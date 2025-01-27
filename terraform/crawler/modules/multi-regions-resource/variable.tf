@@ -23,7 +23,7 @@ variable "country" {
   type        = string
 }
 
-variable "hash_file" {
+variable "commit_hash" {
   description = "Hash file"
   type        = string
 }

@@ -78,6 +78,7 @@ jobs:
             - name: Get Git Commit Hash
               id: get-commit-hash
               run: echo "::set-output name=commit_hash::$(git rev-parse HEAD)"
+              # run: echo "{name}=commit_hash::$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
             - name: Download Lambda Layer Artifact
               uses: actions/download-artifact@v3
@@ -134,5 +135,5 @@ jobs:
               env:
                   COMMIT_HASH: ${{ steps.get-commit-hash.outputs.commit_hash }}
                   FREECASH_SESSION_ID: ${{ secrets.FREECASH_SESSION_ID }}
-              run: terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }} -var="freecash_session_id=${{ secrets.FREECASH_SESSION_ID }}" -var="commit_hash=${{ env.COMMIT_HASH }}"
+              run: terraform ${{ github.event.inputs.action == 'plan' && 'plan' || 'apply -auto-approve' }} -var="freecash_session_id=${{ secrets.FREECASH_SESSION_ID }}" -var="hash_file=${{ env.COMMIT_HASH }}"
               working-directory: terraform/crawler/
