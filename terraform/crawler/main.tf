@@ -35,7 +35,6 @@ module "multi-regions-resource-eu-west-2" {
   providers = {
     aws = aws.eu-west-2
   }
-  
   depends_on = [null_resource.force_update]
 }
 
