@@ -11,7 +11,6 @@ const streamToString = (stream: Readable): Promise<string> => {
 };
 
 export const handler = async (event: any): Promise<any> => {
-    console.log(JSON.stringify(event));
     const snsEvent = event['Records'][0]['Sns'];
     console.log(JSON.stringify(snsEvent));
 

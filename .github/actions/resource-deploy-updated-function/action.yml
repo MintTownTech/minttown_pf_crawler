@@ -49,7 +49,7 @@ runs:
                     {
                       "Effect": "Allow",
                       "Action": "s3:GetObject",
-                      "Resource": "arn:aws:s3:::minttown-pf-crawler-data-bucket-test/*"
+                      "Resource": "arn:aws:s3:::minttown-pf-crawler-data-bucket/*"
                     }
                   ]
                 }'

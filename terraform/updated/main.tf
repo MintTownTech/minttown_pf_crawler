@@ -61,7 +61,7 @@ resource "aws_iam_role_policy" "updated_function_s3_policy" {
       {
         Effect = "Allow"
         Action = "s3:GetObject"
-        Resource = "arn:aws:s3:::minttown-pf-crawler-data-bucket-test/*"
+        Resource = "arn:aws:s3:::${var.bucket_name}/*"
       }
     ]
   })
