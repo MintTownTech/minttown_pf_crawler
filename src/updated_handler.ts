@@ -14,9 +14,15 @@ export const handler = async (event: any): Promise<any> => {
     const snsEvent = event['Records'][0]['Sns'];
     console.log(JSON.stringify(snsEvent));
 
+    // Parse the SNS message
+    const message = JSON.parse(snsEvent.Message);
+    const s3Record = message.Records[0];
+    const bucketName = s3Record.s3.bucket.name;
+    const key = s3Record.s3.object.key;
+
+    console.log(`Bucket: ${bucketName}, Key: ${key}`);
+
     const s3Client = new S3Client({ region: 'us-west-2' });
-    const bucketName = process.env.S3_BUCKET;
-    const key = 'freecash/data-us-west-2.json';
 
     try {
         const params = {
@@ -29,11 +35,7 @@ export const handler = async (event: any): Promise<any> => {
         if (data.Body) {
             const bodyString = await streamToString(data.Body as Readable);
             const jsonData = JSON.parse(bodyString);
-            if (Array.isArray(jsonData)) {
-                console.log(jsonData.slice(0, 2));
-            } else {
-                console.error('Error: jsonData is not an array');
-            }
+            console.log(jsonData['data']['getOffers']['items'][0]['id']);
         } else {
             console.error('Error: data.Body is undefined');
         }

@@ -103,7 +103,7 @@ resource "aws_s3_bucket_policy" "cross_crawler_aws_account_access" {
           "s3:GetObjectAcl",
           "s3:ListBucket"
         ],
-        Resource = ["${aws_s3_bucket.data_bucket.arn}/*", aws_s3_bucket.data_bucket.arn]
+        Resource = [ aws_s3_bucket.data_bucket.arn, "${aws_s3_bucket.data_bucket.arn}/*" ]
       },
       {
         Sid    = "AllowLambdaFunctionsInSameAccount",
@@ -117,7 +117,7 @@ resource "aws_s3_bucket_policy" "cross_crawler_aws_account_access" {
           "s3:GetObjectAcl",
           "s3:ListBucket"
         ],
-        Resource = ["${aws_s3_bucket.data_bucket.arn}/*", aws_s3_bucket.data_bucket.arn],
+        Resource = [ aws_s3_bucket.data_bucket.arn, "${aws_s3_bucket.data_bucket.arn}/*" ]
         Condition = {
           StringEquals = {
             "aws:SourceAccount" = var.crawler_aws_account_id  # S3 bucket's account ID
